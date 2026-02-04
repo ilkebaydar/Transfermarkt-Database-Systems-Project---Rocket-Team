@@ -1,0 +1,6 @@
+
+app/templates/*.html linguist-detectable=false
+
+db/*.sql linguist-detectable=false
+
+*.py linguist-detectable=true
