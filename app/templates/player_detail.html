@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if player %}{{ player.name }}{% else %}Player Not Found{% endif %} | Transfermarkt</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .content-card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin-top: 20px;
+        }
+
+        .nav-home {
+            text-decoration: none;
+            color: #495057;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.3s;
+        }
+        .nav-home:hover {
+            color: #0d6efd;
+        }
+
+        .player-image {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .player-silhouette {
+            width: 100%;
+            max-width: 400px;
+            height: 500px;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .player-silhouette i {
+            font-size: 200px;
+            color: #999;
+            opacity: 0.6;
+        }
+
+        .player-header {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .info-row {
+            padding: 15px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.1em;
+            color: #212529;
+        }
+
+        .badge-custom {
+            font-size: 0.9em;
+            padding: 8px 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container py-4">
+        
+        <div class="mb-3">
+            <a href="/players" class="nav-home">
+                <i class="fas fa-arrow-left"></i> Back to Players List
+            </a>
+        </div>
+
+        {% if error %}
+        <div class="content-card">
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
+            </div>
+            <a href="/players" class="btn btn-primary">
+                <i class="fas fa-arrow-left me-2"></i>Return to Players List
+            </a>
+        </div>
+        {% elif player %}
+        <div class="content-card">
+            <div class="row">
+                <!-- Player Image -->
+                <div class="col-md-4 text-center mb-4 mb-md-0">
+                    {% if player.image_url %}
+                    <img src="{{ player.image_url }}" alt="{{ player.name }}" class="player-image" 
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="player-silhouette" style="display: none;">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    {% else %}
+                    <div class="player-silhouette">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Player Info -->
+                <div class="col-md-8">
+                    <div class="player-header">
+                        <h1 class="display-5 fw-bold mb-2">{{ player.name }}</h1>
+                        <div class="d-flex flex-wrap gap-2 align-items-center">
+                            {% if player.position %}
+                            <span class="badge bg-primary badge-custom">
+                                <i class="fas fa-futbol me-1"></i>{{ player.position }}
+                            </span>
+                            {% endif %}
+                            {% if player.sub_position %}
+                            <span class="badge bg-info badge-custom">{{ player.sub_position }}</span>
+                            {% endif %}
+                            {% if player.foot %}
+                            <span class="badge bg-secondary badge-custom">
+                                <i class="fas fa-shoe-prints me-1"></i>{{ player.foot }} Foot
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-row">
+                                <div class="info-label">Player ID</div>
+                                <div class="info-value">
+                                    <span class="badge bg-light text-dark border">#{{ player.player_id }}</span>
+                                </div>
+                            </div>
+
+                            {% if player.club_name %}
+                            <div class="info-row">
+                                <div class="info-label">Current Club</div>
+                                <div class="info-value">
+                                    <i class="fas fa-shield-alt text-primary me-2"></i>{{ player.club_name }}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if player.country_of_citizenship %}
+                            <div class="info-row">
+                                <div class="info-label">Country</div>
+                                <div class="info-value">
+                                    <i class="fas fa-flag me-2"></i>{{ player.country_of_citizenship }}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if player.date_of_birth %}
+                            <div class="info-row">
+                                <div class="info-label">Date of Birth</div>
+                                <div class="info-value">
+                                    <i class="fas fa-birthday-cake me-2"></i>{{ player.date_of_birth }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            {% if player.market_value %}
+                            <div class="info-row">
+                                <div class="info-label">Market Value</div>
+                                <div class="info-value text-success fw-bold fs-4">
+                                    <i class="fas fa-euro-sign me-2"></i>{{ "{:,.0f}".format(player.market_value) }} €
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if player.last_season %}
+                            <div class="info-row">
+                                <div class="info-label">Last Season</div>
+                                <div class="info-value">
+                                    <i class="fas fa-calendar me-2"></i>{{ player.last_season }}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if player.current_club_id %}
+                            <div class="info-row">
+                                <div class="info-label">Club ID</div>
+                                <div class="info-value">
+                                    <span class="badge bg-light text-dark border">#{{ player.current_club_id }}</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-top">
+                        <a href="/players" class="btn btn-outline-primary me-2">
+                            <i class="fas fa-arrow-left me-2"></i>Back to List
+                        </a>
+                        <button class="btn btn-primary" onclick="editPlayer({{ player.player_id }})">
+                            <i class="fas fa-edit me-2"></i>Edit Player
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Status Message for Inactive Players -->
+        {% if club_age_stats.status_message %}
+        <div class="content-card mt-4">
+            <div class="alert alert-warning d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle me-3 fs-4"></i>
+                <div>
+                    <strong>Note:</strong> {{ club_age_stats.status_message }}
+                    <br>
+                    <small class="text-muted">Age and market value comparisons are based on active players only.</small>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Age Comparison Section -->
+        <div class="content-card mt-4">
+            <h2 class="mb-4">
+                <i class="fas fa-birthday-cake me-2 text-primary"></i>Age Comparison
+            </h2>
+            
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="card border-primary h-100 d-flex flex-column">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title text-primary">
+                                <i class="fas fa-user me-2"></i>Player Age
+                            </h5>
+                            <div class="mt-auto">
+                                <div class="h2 fw-bold text-primary">
+                                    {% if club_age_stats.player_age is not none %}
+                                        {{ club_age_stats.player_age }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </div>
+                                <div class="text-muted small">years old</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <div class="card border-info h-100 d-flex flex-column">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title text-info">
+                                <i class="fas fa-shield-alt me-2"></i>Club Average
+                            </h5>
+                            <div class="mt-auto">
+                                <div class="h2 fw-bold text-info">
+                                    {% if club_age_stats.club_average_age is not none %}
+                                        {{ "{:.1f}".format(club_age_stats.club_average_age) }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </div>
+                                <div class="text-muted small">years old</div>
+                                {% if club_age_stats.club_age_difference is not none %}
+                                    <div class="mt-2">
+                                        {% if club_age_stats.club_age_difference > 0 %}
+                                            <span class="text-warning fw-bold">
+                                                <i class="fas fa-arrow-up me-1"></i>{{ "{:.1f}".format(club_age_stats.club_age_difference) }} years older
+                                            </span>
+                                        {% elif club_age_stats.club_age_difference < 0 %}
+                                            <span class="text-success fw-bold">
+                                                <i class="fas fa-arrow-down me-1"></i>{{ "{:.1f}".format(club_age_stats.club_age_difference|abs) }} years younger
+                                            </span>
+                                        {% else %}
+                                            <span class="text-secondary fw-bold">
+                                                <i class="fas fa-equals me-1"></i>Equal
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <div class="card border-success h-100 d-flex flex-column">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title text-success">
+                                <i class="fas fa-trophy me-2"></i>League Average
+                            </h5>
+                            <div class="mt-auto">
+                                <div class="h2 fw-bold text-success">
+                                    {% if club_age_stats.league_average_age is not none %}
+                                        {{ "{:.1f}".format(club_age_stats.league_average_age) }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </div>
+                                <div class="text-muted small">years old</div>
+                                {% if club_age_stats.league_age_difference is not none %}
+                                    <div class="mt-2">
+                                        {% if club_age_stats.league_age_difference > 0 %}
+                                            <span class="text-warning fw-bold">
+                                                <i class="fas fa-arrow-up me-1"></i>{{ "{:.1f}".format(club_age_stats.league_age_difference) }} years older
+                                            </span>
+                                        {% elif club_age_stats.league_age_difference < 0 %}
+                                            <span class="text-success fw-bold">
+                                                <i class="fas fa-arrow-down me-1"></i>{{ "{:.1f}".format(club_age_stats.league_age_difference|abs) }} years younger
+                                            </span>
+                                        {% else %}
+                                            <span class="text-secondary fw-bold">
+                                                <i class="fas fa-equals me-1"></i>Equal
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Market Value Comparison Section -->
+        <div class="content-card mt-4">
+            <h2 class="mb-4">
+                <i class="fas fa-euro-sign me-2 text-primary"></i>Market Value Comparison
+            </h2>
+            
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="card border-primary h-100 d-flex flex-column">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title text-primary">
+                                <i class="fas fa-user me-2"></i>Player Market Value
+                            </h5>
+                            <div class="mt-auto">
+                                <div class="h4 fw-bold text-primary">
+                                    {% if player.market_value %}
+                                        {{ "{:,.0f}".format(player.market_value) }} €
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <div class="card border-info h-100 d-flex flex-column">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title text-info">
+                                <i class="fas fa-shield-alt me-2"></i>Club Average
+                            </h5>
+                            <div class="mt-auto">
+                                <div class="h4 fw-bold text-info">
+                                    {% if club_age_stats.club_average_market_value is not none %}
+                                        {{ "{:,.0f}".format(club_age_stats.club_average_market_value) }} €
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </div>
+                                {% if club_age_stats.club_mv_difference is not none %}
+                                    <div class="mt-2">
+                                        {% if club_age_stats.club_mv_difference > 0 %}
+                                            <span class="text-warning fw-bold">
+                                                <i class="fas fa-arrow-up me-1"></i>{{ "{:,.0f}".format(club_age_stats.club_mv_difference) }} € more
+                                            </span>
+                                        {% elif club_age_stats.club_mv_difference < 0 %}
+                                            <span class="text-success fw-bold">
+                                                <i class="fas fa-arrow-down me-1"></i>{{ "{:,.0f}".format(club_age_stats.club_mv_difference|abs) }} € less
+                                            </span>
+                                        {% else %}
+                                            <span class="text-secondary fw-bold">
+                                                <i class="fas fa-equals me-1"></i>Equal
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <div class="card border-success h-100 d-flex flex-column">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title text-success">
+                                <i class="fas fa-trophy me-2"></i>League Average
+                            </h5>
+                            <div class="mt-auto">
+                                <div class="h4 fw-bold text-success">
+                                    {% if club_age_stats.league_average_market_value is not none %}
+                                        {{ "{:,.0f}".format(club_age_stats.league_average_market_value) }} €
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </div>
+                                {% if club_age_stats.league_mv_difference is not none %}
+                                    <div class="mt-2">
+                                        {% if club_age_stats.league_mv_difference > 0 %}
+                                            <span class="text-warning fw-bold">
+                                                <i class="fas fa-arrow-up me-1"></i>{{ "{:,.0f}".format(club_age_stats.league_mv_difference) }} € more
+                                            </span>
+                                        {% elif club_age_stats.league_mv_difference < 0 %}
+                                            <span class="text-success fw-bold">
+                                                <i class="fas fa-arrow-down me-1"></i>{{ "{:,.0f}".format(club_age_stats.league_mv_difference|abs) }} € less
+                                            </span>
+                                        {% else %}
+                                            <span class="text-secondary fw-bold">
+                                                <i class="fas fa-equals me-1"></i>Equal
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Transfer History Section -->
+        <div class="content-card mt-4">
+            <h2 class="mb-4">
+                <i class="fas fa-history me-2 text-primary"></i>Transfer History
+            </h2>
+            
+            {% if transfer_history and transfer_history|length > 0 %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Season</th>
+                            <th>From Club</th>
+                            <th>To Club</th>
+                            <th>Transfer Fee</th>
+                            <th>Market Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transfer in transfer_history %}
+                        <tr>
+                            <td>
+                                {% if transfer.transfer_date %}
+                                    {{ transfer.transfer_date }}
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ transfer.transfer_season }}</span>
+                            </td>
+                            <td>
+                                {% if transfer.from_club_name %}
+                                    {{ transfer.from_club_name }}
+                                {% else %}
+                                    <span class="text-muted">Unknown</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if transfer.to_club_name %}
+                                    {{ transfer.to_club_name }}
+                                {% else %}
+                                    <span class="text-muted">Unknown</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if transfer.transfer_fee and transfer.transfer_fee > 0 %}
+                                    <span class="text-success fw-bold">{{ "{:,.0f}".format(transfer.transfer_fee) }} €</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if transfer.market_value_in_eur %}
+                                    {{ "{:,.0f}".format(transfer.market_value_in_eur) }} €
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>No transfer history available for this player.
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function editPlayer(playerId) {
+            window.location.href = '/players?edit=' + playerId;
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

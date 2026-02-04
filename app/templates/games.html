@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Games</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
+    <style>
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .content-card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 25px;
+            margin-top: 20px;
+        }
+        .nav-home {
+            text-decoration: none;
+            color: #495057;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.3s;
+        }
+        .nav-home:hover {
+            color: #0d6efd;
+        }
+        thead th {
+            background-color: #212529 !important;
+            color: white !important;
+        }
+        .choices__inner {
+            background-color: #fff;
+            border: 1px solid #ced4da;
+            min-height: 38px;
+            border-radius: 0.25rem;
+        }
+        .choices[data-type*="select-one"] .choices__inner {
+            padding-bottom: 0;
+        }
+        /* Head-to-head panel styling */
+        #h2h-panel .card-body {
+            background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+        }
+        #h2h-panel .h2h-section {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px 14px;
+            background-color: #ffffff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        #h2h-panel .h2h-section + .h2h-section {
+            margin-top: 12px;
+        }
+        #h2h-panel h6 {
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+        #h2h-panel .stat-text {
+            font-size: 0.9rem;
+            color: #444;
+        }
+        #h2h-panel .text-muted {
+            color: #6c757d !important;
+        }
+        #h2h-last-games .list-group-item {
+            border-color: #e5e7eb;
+        }
+        #h2h-last-games .badge {
+            min-width: 70px;
+            text-align: center;
+        }
+        /* Keep h2h panel aligned with table height on wide screens */
+        #games-layout {
+            align-items: stretch;
+        }
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+        .sortable.active {
+            color: #0d6efd;
+        }
+        .sort-indicator {
+            font-size: 12px;
+            margin-left: 4px;
+        }
+        @media (min-width: 992px) {
+            #h2h-panel {
+                align-self: stretch;
+                height: 100%;
+            }
+            #h2h-panel .card-body {
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+            }
+            #h2h-content {
+                flex: 1;
+                overflow: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container-lg py-4" style="max-width: 1700px;">
+        <div class="mb-3">
+            <a href="/" class="nav-home">
+                <i class="fas fa-arrow-left"></i> Return to Home
+            </a>
+        </div>
+        <div class="container py-4" style="max-width: 1700px;">
+            <!-- Alert Messages -->
+            <div id="alert-container"></div>
+
+            <div class="content-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="m-0 text-dark">
+                        <i class="fas fa-futbol text-primary me-2"></i>Manage Games
+                    </h2>
+                    <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#add-game-form-container" aria-expanded="false">
+                        <i class="fas fa-plus-circle me-2"></i>Add New Game
+                    </button>
+                </div>
+
+                <!-- Add Game Form (Collapsible) -->
+                <div class="collapse" id="add-game-form-container">
+                    <div class="card card-body mb-4" style="background-color: #f8f9fa; border: 1px solid #dee2e6;">
+                        <h4 class="mb-3"><i class="fas fa-plus-circle text-primary me-2"></i>Add a New Game</h4>
+                        <form id="add-game-form">
+                            <!-- Form fields -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="add-date" class="form-label">Date</label>
+                                    <input type="date" class="form-control" id="add-date" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="add-season" class="form-label">Season</label>
+                                    <input type="number" class="form-control" id="add-season" placeholder="e.g., 2023" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="add-home-club" class="form-label">Home Club</label>
+                                    <select id="add-home-club" class="form-control" required></select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="add-away-club" class="form-label">Away Club</label>
+                                    <select id="add-away-club" class="form-control" required></select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="add-home-goals" class="form-label">Home Goals</label>
+                                    <input type="number" class="form-control" id="add-home-goals" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="add-away-goals" class="form-label">Away Goals</label>
+                                    <input type="number" class="form-control" id="add-away-goals" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="add-stadium" class="form-label">Stadium</label>
+                                    <input type="text" class="form-control" id="add-stadium">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="add-attendance" class="form-label">Attendance</label>
+                                    <input type="number" class="form-control" id="add-attendance">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="add-competition" class="form-label">Competition</label>
+                                    <select id="add-competition" class="form-control" required></select>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Add Game</button>
+                        </form>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <!-- Games List -->
+                <div id="games-list">
+                    <h3 class="mb-3"><i class="fas fa-list text-primary me-2"></i>List of Games</h3>
+                    <div class="loading-spinner" id="loading-spinner" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                    <div id="games-layout" class="d-flex flex-column flex-lg-row align-items-start gap-3">
+                        <div class="table-responsive flex-grow-1" id="games-main">
+                            <div class="card mb-3">
+                                <div class="card-body py-2">
+                                    <div class="row g-2 align-items-end">
+                                        <div class="col-lg-2 col-md-4">
+                                            <label class="form-label mb-1" for="filter-home">Home Club</label>
+                                            <select class="form-control form-control-sm" id="filter-home"></select>
+                                        </div>
+                                        <div class="col-lg-2 col-md-4">
+                                            <label class="form-label mb-1" for="filter-away">Away Club</label>
+                                            <select class="form-control form-control-sm" id="filter-away"></select>
+                                        </div>
+                                        <div class="col-lg-2 col-md-4">
+                                            <label class="form-label mb-1" for="filter-competition">Competition</label>
+                                            <select class="form-control form-control-sm" id="filter-competition"></select>
+                                        </div>
+                                        <div class="col-lg-2 col-md-4">
+                                            <label class="form-label mb-1" for="filter-season">Season</label>
+                                            <input type="number" class="form-control form-control-sm" id="filter-season" placeholder="2024">
+                                        </div>
+                                        <div class="col-lg-2 col-md-4">
+                                            <label class="form-label mb-1" for="filter-date-from">From</label>
+                                            <input type="date" class="form-control form-control-sm" id="filter-date-from">
+                                        </div>
+                                        <div class="col-lg-2 col-md-4">
+                                            <label class="form-label mb-1" for="filter-date-to">To</label>
+                                            <input type="date" class="form-control form-control-sm" id="filter-date-to">
+                                        </div>
+                                        <div class="col-12 d-flex gap-2 mt-1">
+                                            <button class="btn btn-sm btn-primary" id="filter-apply">Apply</button>
+                                            <button class="btn btn-sm btn-outline-secondary" id="filter-reset">Reset</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                    <th>ID</th>
+                                    <th class="sortable" data-sort="date">Date <span class="sort-indicator">▼</span></th>
+                                    <th class="sortable" data-sort="home_club">Home Club</th>
+                                    <th class="sortable" data-sort="away_club">Away Club</th>
+                                    <th class="sortable" data-sort="home_goals">Score</th>
+                                    <th class="sortable" data-sort="season">Season</th>
+                                    <th class="sortable" data-sort="competition">Competition</th>
+                                    <th class="sortable" data-sort="stadium">Stadium</th>
+                                    <th class="sortable" data-sort="attendance">Attendance</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                                <tbody id="games-table-body"></tbody>
+                            </table>
+                            <div class="d-flex flex-wrap align-items-center justify-content-between">
+                                <nav aria-label="Games pagination" class="mb-2 mb-md-0">
+                                    <ul class="pagination" id="games-pagination"></ul>
+                                </nav>
+                                <form class="d-flex align-items-center gap-2 mb-2 mb-md-0" id="games-page-jump">
+                                    <label for="games-page-input" class="text-muted small mb-0">Go to</label>
+                                    <input type="number" min="1" class="form-control form-control-sm" id="games-page-input" style="width: 90px;">
+                                    <button class="btn btn-sm btn-outline-primary" type="submit">Go</button>
+                                </form>
+                            </div>
+                            <div class="text-muted small mt-2" id="games-page-info"></div>
+                        </div>
+                        <div id="h2h-panel" class="card shadow-sm d-none" style="min-width: 450px; max-width: 500px;">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold" id="h2h-title">Head-to-head</div>
+                                    <div class="text-muted small" id="h2h-subtitle"></div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="h2h-close">Close</button>
+                            </div>
+                            <div class="card-body">
+                                <div id="h2h-loading" class="text-center my-3" style="display: none;">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                                <div id="h2h-error" class="alert alert-danger d-none"></div>
+                                <div id="h2h-content" class="d-none">
+                                    <div class="h2h-section">
+                                        <h6 class="mb-1">Overall</h6>
+                                        <div class="stat-text" id="h2h-summary"></div>
+                                        <div class="text-muted small" id="h2h-attendance"></div>
+                                    </div>
+                                    <div class="h2h-section">
+                                        <h6 class="mb-1">Club Snapshot</h6>
+                                        <div class="row" id="h2h-clubs"></div>
+                                    </div>
+                                    <div class="h2h-section">
+                                        <h6 class="mb-1">Last 5 Meetings</h6>
+                                        <div id="h2h-last-games" class="list-group small"></div>
+                                    </div>
+                                    <div class="h2h-section">
+                                        <h6 class="mb-1">Biggest Win</h6>
+                                        <div id="h2h-biggest" class="text-muted small"></div>
+                                    </div>
+                                    <div class="h2h-section">
+                                        <h6 class="mb-1">Most Expensive Transfer</h6>
+                                        <div id="h2h-transfer" class="text-muted small"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Update Game Modal -->
+        <div class="modal fade" id="updateGameModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Update Game</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="update-game-form">
+                            <input type="hidden" id="update-game-id">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="update-date" class="form-label">Date</label>
+                                    <input type="date" class="form-control" id="update-date" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="update-season" class="form-label">Season</label>
+                                    <input type="number" class="form-control" id="update-season" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="update-home-goals" class="form-label">Home Goals</label>
+                                    <input type="number" class="form-control" id="update-home-goals" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="update-away-goals" class="form-label">Away Goals</label>
+                                    <input type="number" class="form-control" id="update-away-goals" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="update-stadium" class="form-label">Stadium</label>
+                                    <input type="text" class="form-control" id="update-stadium">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="update-attendance" class="form-label">Attendance</label>
+                                    <input type="number" class="form-control" id="update-attendance">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="update-competition" class="form-label">Competition</label>
+                                    <select id="update-competition" class="form-control" required></select>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="save-update-btn">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const gamesTableBody = document.getElementById('games-table-body');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const paginationEl = document.getElementById('games-pagination');
+            const pageInfoEl = document.getElementById('games-page-info');
+            const addForm = document.getElementById('add-game-form');
+            const updateForm = document.getElementById('update-game-form');
+            const updateModal = new bootstrap.Modal(document.getElementById('updateGameModal'));
+            const pageJumpForm = document.getElementById('games-page-jump');
+            const pageJumpInput = document.getElementById('games-page-input');
+            const h2hPanel = document.getElementById('h2h-panel');
+            const h2hClose = document.getElementById('h2h-close');
+            const h2hTitle = document.getElementById('h2h-title');
+            const h2hSubtitle = document.getElementById('h2h-subtitle');
+            const h2hLoading = document.getElementById('h2h-loading');
+            const h2hError = document.getElementById('h2h-error');
+            const h2hContent = document.getElementById('h2h-content');
+            const h2hSummary = document.getElementById('h2h-summary');
+            const h2hAttendance = document.getElementById('h2h-attendance');
+            const h2hClubs = document.getElementById('h2h-clubs');
+            const h2hLastGames = document.getElementById('h2h-last-games');
+            const h2hBiggest = document.getElementById('h2h-biggest');
+            const h2hTransfer = document.getElementById('h2h-transfer');
+            const filterHome = document.getElementById('filter-home');
+            const filterAway = document.getElementById('filter-away');
+            const filterSeason = document.getElementById('filter-season');
+            const filterCompetition = document.getElementById('filter-competition');
+            const filterDateFrom = document.getElementById('filter-date-from');
+            const filterDateTo = document.getElementById('filter-date-to');
+            const filterApply = document.getElementById('filter-apply');
+            const filterReset = document.getElementById('filter-reset');
+            
+            const PER_PAGE = 10;
+            let currentPage = 1;
+            let totalPages = 1;
+            let totalCount = 0;
+            
+            let homeClubChoice, awayClubChoice, addCompetitionChoice, updateCompetitionChoice;
+            let filterHomeChoice, filterAwayChoice, filterCompetitionChoice;
+            let sortKey = 'date';
+            let sortOrder = 'desc';
+            let lastH2HMeta = null;
+
+            const choiceConfig = {
+                removeItemButton: true,
+                searchResultLimit: 100,
+            };
+            const competitionChoiceConfig = choiceConfig;
+
+            function showAlert(message, type = 'success') {
+                const container = document.getElementById('alert-container');
+                const alert = document.createElement('div');
+                alert.className = `alert alert-${type} alert-dismissible fade show`;
+                alert.role = 'alert';
+                alert.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                container.appendChild(alert);
+                setTimeout(() => alert.remove(), 5000);
+            }
+
+            async function loadGames(page = 1) {
+                loadingSpinner.style.display = 'block';
+                gamesTableBody.innerHTML = '';
+                try {
+                    const params = new URLSearchParams();
+                    params.append('page', page);
+                    params.append('per_page', PER_PAGE);
+                    params.append('sort', sortKey);
+                    params.append('order', sortOrder);
+                    const homeVal = filterHomeChoice ? filterHomeChoice.getValue(true) : (filterHome ? filterHome.value.trim() : '');
+                    const awayVal = filterAwayChoice ? filterAwayChoice.getValue(true) : (filterAway ? filterAway.value.trim() : '');
+                    const compVal = filterCompetitionChoice ? filterCompetitionChoice.getValue(true) : (filterCompetition ? filterCompetition.value.trim() : '');
+                    if (homeVal) params.append('home', homeVal);
+                    if (awayVal) params.append('away', awayVal);
+                    if (compVal) params.append('competition', compVal);
+                    if (filterSeason && filterSeason.value.trim()) params.append('season', filterSeason.value.trim());
+                    if (filterDateFrom && filterDateFrom.value) params.append('date_from', filterDateFrom.value);
+                    if (filterDateTo && filterDateTo.value) params.append('date_to', filterDateTo.value);
+
+                    const res = await fetch(`/api/games?${params.toString()}`);
+                    const data = await res.json();
+                    if (!res.ok || data.error) {
+                        showAlert(data.error || 'Failed to load games.', 'danger');
+                        return;
+                    }
+                    const games = data.games || data; // fallback if backend still returns array
+                    currentPage = data.current_page || data.currentPage || page;
+                    totalPages = data.total_pages || data.totalPages || 1;
+                    totalCount = data.total_count || data.totalCount || games.length;
+                    if (totalPages < 1) totalPages = 1;
+                    renderGames(games);
+                    renderPagination();
+                    renderPageInfo();
+                } catch (err) {
+                    showAlert('Failed to load games.', 'danger');
+                } finally {
+                    loadingSpinner.style.display = 'none';
+                }
+            }
+
+            function renderGames(games) {
+                gamesTableBody.innerHTML = '';
+                games.forEach(game => {
+                    const row = gamesTableBody.insertRow();
+                    row.innerHTML = `
+                        <td>${game.game_id}</td>
+                        <td>${new Date(game.date).toLocaleDateString()}</td>
+                        <td>${game.home_club}</td>
+                        <td>${game.away_club}</td>
+                        <td>${game.home_club_goals} - ${game.away_club_goals}</td>
+                        <td>${game.season}</td>
+                        <td>${game.competition_id || ''}</td>
+                        <td>${game.stadium || ''}</td>
+                        <td>${game.attendance != null ? game.attendance : ''}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info update-btn" data-id="${game.game_id}">Update</button>
+                            <button class="btn btn-sm btn-danger delete-btn" data-id="${game.game_id}">Delete</button>
+                            <button class="btn btn-sm btn-secondary analyze-btn" 
+                                data-home-id="${game.home_club_id}" data-away-id="${game.away_club_id}"
+                                data-home-name="${game.home_club}" data-away-name="${game.away_club}">
+                                Analyze
+                            </button>
+                        </td>
+                    `;
+                });
+            }
+
+            function renderPagination() {
+                paginationEl.innerHTML = '';
+                const makeItem = (label, page, disabled = false, active = false) => {
+                    const li = document.createElement('li');
+                    li.className = `page-item${disabled ? ' disabled' : ''}${active ? ' active' : ''}`;
+                    const a = document.createElement('a');
+                    a.className = 'page-link';
+                    a.href = '#';
+                    a.textContent = label;
+                    if (!disabled) {
+                        a.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            loadGames(page);
+                        });
+                    }
+                    li.appendChild(a);
+                    return li;
+                };
+
+                // Prev
+                paginationEl.appendChild(makeItem('«', currentPage - 1, currentPage === 1));
+
+                const windowSize = 2;
+                const start = Math.max(1, currentPage - windowSize);
+                const end = Math.min(totalPages, currentPage + windowSize);
+
+                if (start > 1) paginationEl.appendChild(makeItem(1, 1, false, currentPage === 1));
+                if (start > 2) paginationEl.appendChild(makeItem('...', currentPage, true));
+
+                for (let p = start; p <= end; p++) {
+                    paginationEl.appendChild(makeItem(p, p, false, p === currentPage));
+                }
+
+                if (end < totalPages - 1) paginationEl.appendChild(makeItem('...', currentPage, true));
+                if (end < totalPages) paginationEl.appendChild(makeItem(totalPages, totalPages, false, currentPage === totalPages));
+
+                // Next
+                paginationEl.appendChild(makeItem('»', currentPage + 1, currentPage === totalPages));
+            }
+
+            function renderPageInfo() {
+                if (!pageInfoEl) return;
+                pageInfoEl.textContent = `Page ${currentPage} / ${totalPages} — ${totalCount} games`;
+                if (pageJumpInput) {
+                    pageJumpInput.max = totalPages;
+                    pageJumpInput.value = currentPage;
+                }
+            }
+
+            function updateSortIndicators() {
+                document.querySelectorAll('.sortable').forEach(th => {
+                    th.classList.remove('active');
+                    const indicator = th.querySelector('.sort-indicator');
+                    if (indicator) indicator.remove();
+                    if (th.dataset.sort === sortKey) {
+                        th.classList.add('active');
+                        const span = document.createElement('span');
+                        span.className = 'sort-indicator';
+                        span.textContent = sortOrder === 'asc' ? '▲' : '▼';
+                        th.appendChild(span);
+                    }
+                });
+            }
+
+            const toNum = (v) => {
+                const n = Number(v);
+                return Number.isFinite(n) ? n : 0;
+            };
+            const fmtInt = (v) => (v || v === 0 ? toNum(v).toLocaleString('en-US') : '-');
+            const fmtMoney = (v) => (v || v === 0 ? `€${toNum(v).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : 'N/A');
+            const fmtDate = (d) => d ? new Date(d).toLocaleDateString() : '-';
+
+            function renderHeadToHead(data, meta) {
+                if (!h2hContent || !h2hSummary) return;
+                h2hContent.classList.remove('d-none');
+                h2hError && h2hError.classList.add('d-none');
+
+                const s = data.summary || {};
+                const matches = toNum(s.matches);
+                const homeWins = toNum(s.home_wins);
+                const awayWins = toNum(s.away_wins);
+                const draws = toNum(s.draws);
+                const homeGoals = toNum(s.home_goals);
+                const awayGoals = toNum(s.away_goals);
+                const avgGoals = toNum(s.avg_goals);
+                const avgAttendance = toNum(s.avg_attendance);
+                        
+                const summaryLines = matches                                                                                                                                                                            
+                ? [                                                                                                                                                                                                   
+                    `${meta.homeName}: ${homeWins} wins`,                                                                                                                                                             
+                    `${meta.awayName}: ${awayWins} wins`,                                                                                                                                                             
+                    `Draws: ${draws}`,                                                                                                                                                                                
+                    `Goals: ${homeGoals} - ${awayGoals}`,
+                    `Avg goals: ${avgGoals.toFixed(2)}`                                                                                                                                                               
+                ]                                                                                                                                                                                                   
+                : ['No head-to-head matches found.'];                                                                                                                                                                 
+                h2hSummary.innerHTML = summaryLines.map(l => `<div>${l}</div>`).join('');
+
+                if (h2hAttendance) {
+                    const att = matches ? `Avg attendance: ${fmtInt(avgAttendance)}` : 'Avg attendance: N/A';
+                    h2hAttendance.textContent = att;
+                }
+
+                if (h2hClubs) {
+                    const homeClub = data.clubs?.home || {};
+                    const awayClub = data.clubs?.away || {};
+                    h2hClubs.innerHTML = `
+                        <div class="col-6">
+                            <div class="fw-semibold" style="text-align: center;margin-bottom: 5px;min-height: 2.6em;">${homeClub.name || meta.homeName || 'Home'}</div>
+                            <div class="text-muted small">Players: ${fmtInt(homeClub.players)}</div>
+                            <div class="text-muted small">Squad size: ${fmtInt(homeClub.squad_size)}</div>
+                            <div class="text-muted small">Total value: ${fmtMoney(homeClub.total_value)}</div>
+                            <div class="text-muted small">Avg value: ${fmtMoney(homeClub.avg_value)}</div>
+                            <div class="text-muted small">Avg age: ${homeClub.average_age ? homeClub.average_age.toFixed(1) : 'N/A'}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="fw-semibold" style="text-align: center;margin-bottom: 5px;min-height: 2.6em;">${awayClub.name || meta.awayName || 'Away'}</div>
+                            <div class="text-muted small">Players: ${fmtInt(awayClub.players)}</div>
+                            <div class="text-muted small">Squad size: ${fmtInt(awayClub.squad_size)}</div>
+                            <div class="text-muted small">Total value: ${fmtMoney(awayClub.total_value)}</div>
+                            <div class="text-muted small">Avg value: ${fmtMoney(awayClub.avg_value)}</div>
+                            <div class="text-muted small">Avg age: ${awayClub.average_age ? awayClub.average_age.toFixed(1) : 'N/A'}</div>
+                        </div>
+                    `;
+                }
+
+                if (h2hLastGames) {
+                    h2hLastGames.innerHTML = '';
+                    const games = data.last_games || [];
+                    if (!games.length) {
+                        h2hLastGames.innerHTML = `<div class="text-muted">No recent meetings.</div>`;
+                    } else {
+                        games.forEach(g => {
+                            const homeWin = g.home_club_goals > g.away_club_goals;
+                            const awayWin = g.away_club_goals > g.home_club_goals;
+                            const winner = homeWin ? g.home_club : awayWin ? g.away_club : 'Draw';
+                            const item = document.createElement('div');
+                            item.className = 'list-group-item d-flex justify-content-between align-items-center';
+                            item.innerHTML = `
+                                <div>
+                                    <div>${g.home_club}</div>
+                                    <div>${g.home_club_goals} - ${g.away_club_goals}</div>
+                                    <div>${g.away_club}</div>
+                                    <div class="text-muted small">${fmtDate(g.date)} · Season ${g.season || ''}</div>
+                                </div>  
+                                <span class="badge ${winner === 'Draw' ? 'bg-secondary' : 'bg-success'}">
+                                    ${winner}
+                                </span>
+                            `;
+                            h2hLastGames.appendChild(item);
+                        });
+                    }
+                }
+
+                if (h2hBiggest) {
+                    const b = data.biggest_win;
+                    if (!b) {
+                        h2hBiggest.textContent = 'No data.';
+                    } else {
+                        const diff = b.diff;
+                        const winner = diff > 0 ? b.home_club : diff < 0 ? b.away_club : 'Draw';
+                        h2hBiggest.textContent = `${winner} (${b.home_club_goals}-${b.away_club_goals}) on ${fmtDate(b.date)}`;
+                    }
+                }
+
+                if (h2hTransfer) {
+                    const t = data.top_transfer;
+                    if (!t) {
+                        h2hTransfer.textContent = 'No transfers between these clubs.';
+                    } else {
+                        h2hTransfer.textContent = `${t.player_name} · ${fmtMoney(t.transfer_fee)} · ${fmtDate(t.transfer_date)} · ${t.from_club_name} → ${t.to_club_name}`;
+                    }
+                }
+            }
+
+            function loadHeadToHead(meta) {
+                if (!h2hPanel) return;
+                lastH2HMeta = meta;
+                if (h2hTitle) h2hTitle.textContent = `${meta.homeName} vs ${meta.awayName}`;
+                if (h2hSubtitle) h2hSubtitle.textContent = 'Head-to-head insights';
+                if (h2hContent) h2hContent.classList.add('d-none');
+                if (h2hError) { h2hError.classList.add('d-none'); h2hError.textContent = ''; }
+                if (h2hLoading) h2hLoading.style.display = 'block';
+                h2hPanel.classList.remove('d-none');
+
+                fetch(`/api/games/head2head?home_id=${meta.homeId}&away_id=${meta.awayId}`)
+                    .then(res => res.json().then(body => ({ ok: res.ok, body })))
+                    .then(({ ok, body }) => {
+                        if (!ok || body.error) {
+                            if (h2hError) {
+                                h2hError.textContent = body.error || 'Failed to load analysis';
+                                h2hError.classList.remove('d-none');
+                            }
+                            return;
+                        }
+                        renderHeadToHead(body, meta);
+                    })
+                    .catch(() => {
+                        if (h2hError) {
+                            h2hError.textContent = 'Failed to load analysis';
+                            h2hError.classList.remove('d-none');
+                        }
+                    })
+                    .finally(() => {
+                        if (h2hLoading) h2hLoading.style.display = 'none';
+                    });
+            }
+
+            function refreshHeadToHeadIfActive() {
+                if (!lastH2HMeta) return;
+                if (!h2hPanel || h2hPanel.classList.contains('d-none')) return;
+                loadHeadToHead(lastH2HMeta);
+            }
+
+            // Initialize all Choices instances
+            homeClubChoice = new Choices('#add-home-club', choiceConfig);
+            awayClubChoice = new Choices('#add-away-club', choiceConfig);
+            addCompetitionChoice = new Choices('#add-competition', competitionChoiceConfig);
+            updateCompetitionChoice = new Choices('#update-competition', competitionChoiceConfig);
+            filterHomeChoice = new Choices('#filter-home', choiceConfig);
+            filterAwayChoice = new Choices('#filter-away', choiceConfig);
+            filterCompetitionChoice = new Choices('#filter-competition', competitionChoiceConfig);
+
+            // Fetch data and populate Choices
+            function populateChoices() {
+                // Fetch Clubs
+                fetch('/api/clubs')
+                    .then(response => response.json())
+                    .then(clubs => {
+                        if (clubs.error) {
+                            showAlert(clubs.error, 'danger');
+                            return;
+                        }
+                        const clubOptions = clubs.map(club => ({ value: club.club_id, label: club.name }));
+                        homeClubChoice.setChoices(clubOptions, 'value', 'label', false);
+                        awayClubChoice.setChoices(clubOptions, 'value', 'label', false);
+                        const nameOptions = clubs.map(club => ({ value: club.name, label: club.name }));
+                        if (filterHomeChoice) {
+                            filterHomeChoice.clearStore();
+                            filterHomeChoice.setChoices([{ value: '', label: '', selected: true }, ...nameOptions], 'value', 'label', false);
+                        }
+                        if (filterAwayChoice) {
+                            filterAwayChoice.clearStore();
+                            filterAwayChoice.setChoices([{ value: '', label: '', selected: true }, ...nameOptions], 'value', 'label', false);
+                        }
+                    }).catch(() => showAlert('Failed to load clubs.', 'danger'));
+
+                // Fetch Competitions
+                fetch('/api/competitions')
+                    .then(response => response.json())
+                    .then(competitions => {
+                        if (competitions.error) {
+                            showAlert(competitions.error, 'danger');
+                            return;
+                        }
+                        const competitionOptions = competitions.map(comp => ({
+                            value: comp.competition_id,
+                            label: comp.competition_id
+                        }));
+                        addCompetitionChoice.setChoices(competitionOptions, 'value', 'label', false);
+                        updateCompetitionChoice.setChoices(competitionOptions, 'value', 'label', false);
+                        if (filterCompetitionChoice) {
+                            filterCompetitionChoice.clearStore();
+                            filterCompetitionChoice.setChoices(
+                                [{ value: '', label: '', selected: true }, ...competitionOptions],
+                                'value',
+                                'label',
+                                false
+                            );
+                        }
+                    }).catch(() => showAlert('Failed to load competitions.', 'danger'));
+            }
+
+
+            addForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const data = {
+                    date: document.getElementById('add-date').value,
+                    season: document.getElementById('add-season').value,
+                    home_club_id: homeClubChoice.getValue(true),
+                    away_club_id: awayClubChoice.getValue(true),
+                    home_club_goals: document.getElementById('add-home-goals').value,
+                    away_club_goals: document.getElementById('add-away-goals').value,
+                    stadium: document.getElementById('add-stadium').value,
+                    attendance: document.getElementById('add-attendance').value,
+                    competition_id: addCompetitionChoice.getValue(true),
+                };
+
+                fetch('/api/games/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        showAlert('Game added successfully!', 'success');
+                        addForm.reset();
+                        homeClubChoice.clearStore();
+                        awayClubChoice.clearStore();
+                        addCompetitionChoice.clearStore();
+                        populateChoices();
+                        loadGames(1); // yeni eklenen en üste gelir
+                        refreshHeadToHeadIfActive();
+                    } else {
+                        showAlert(result.error || 'Failed to add game.', 'danger');
+                    }
+                });
+            });
+
+            gamesTableBody.addEventListener('click', function(e) {
+                if (e.target.classList.contains('delete-btn')) {
+                    const gameId = e.target.dataset.id;
+                    if (confirm('Are you sure you want to delete this game?')) {
+                        fetch(`/api/games/delete/${gameId}`, { method: 'DELETE' })
+                            .then(response => response.json())
+                            .then(result => {
+                                if (result.success) {
+                                    showAlert('Game deleted successfully!', 'success');
+                                    loadGames(currentPage);
+                                    refreshHeadToHeadIfActive();
+                                } else {
+                                    showAlert(result.error || 'Failed to delete game.', 'danger');
+                                }
+                            });
+                    }
+                }
+
+                if (e.target.classList.contains('update-btn')) {
+                    const gameId = e.target.dataset.id;
+                    fetch(`/api/games/${gameId}`)
+                        .then(response => response.json())
+                        .then(game => {
+                            if (game.error) {
+                                showAlert(game.error, 'danger');
+                                return;
+                            }
+                            document.getElementById('update-game-id').value = game.game_id;
+                            document.getElementById('update-date').value = new Date(game.date).toISOString().split('T')[0];
+                            document.getElementById('update-season').value = game.season;
+                            document.getElementById('update-home-goals').value = game.home_club_goals;
+                            document.getElementById('update-away-goals').value = game.away_club_goals;
+                            document.getElementById('update-stadium').value = game.stadium;
+                            document.getElementById('update-attendance').value = game.attendance;
+                            
+                            updateCompetitionChoice.setChoiceByValue(String(game.competition_id));
+
+                            updateModal.show();
+                        });
+                }
+
+                if (e.target.classList.contains('analyze-btn')) {
+                    const homeId = e.target.dataset.homeId;
+                    const awayId = e.target.dataset.awayId;
+                    const homeName = e.target.dataset.homeName;
+                    const awayName = e.target.dataset.awayName;
+                    if (!homeId || !awayId) return;
+                    loadHeadToHead({ homeId, awayId, homeName, awayName });
+                }
+            });
+
+            document.getElementById('save-update-btn').addEventListener('click', function() {
+                const gameId = document.getElementById('update-game-id').value;
+                const data = {
+                    date: document.getElementById('update-date').value,
+                    season: document.getElementById('update-season').value,
+                    home_club_goals: document.getElementById('update-home-goals').value,
+                    away_club_goals: document.getElementById('update-away-goals').value,
+                    stadium: document.getElementById('update-stadium').value,
+                    attendance: document.getElementById('update-attendance').value,
+                    competition_id: updateCompetitionChoice.getValue(true),
+                };
+
+                fetch(`/api/games/update/${gameId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        showAlert('Game updated successfully!', 'success');
+                        updateModal.hide();
+                        loadGames(currentPage);
+                        refreshHeadToHeadIfActive();
+                    } else {
+                        showAlert(result.error || 'Failed to update game.', 'danger');
+                    }
+                });
+            });
+
+            if (filterApply) {
+                filterApply.addEventListener('click', () => {
+                    currentPage = 1;
+                    loadGames(1);
+                });
+            }
+            if (filterReset) {
+                filterReset.addEventListener('click', () => {
+                    if (filterHomeChoice) filterHomeChoice.removeActiveItems();
+                    if (filterAwayChoice) filterAwayChoice.removeActiveItems();
+                    if (filterCompetitionChoice) filterCompetitionChoice.removeActiveItems();
+                    [filterSeason, filterDateFrom, filterDateTo].forEach(el => {
+                        if (el) el.value = '';
+                    });
+                    currentPage = 1;
+                    loadGames(1);
+                });
+            }
+
+            // Sort handlers
+            document.querySelectorAll('.sortable').forEach(th => {
+                th.addEventListener('click', () => {
+                    const key = th.dataset.sort;
+                    if (!key) return;
+                    if (sortKey === key) {
+                        sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        sortKey = key;
+                        sortOrder = 'asc';
+                    }
+                    currentPage = 1;
+                    updateSortIndicators();
+                    loadGames(1);
+                });
+            });
+
+            if (h2hClose && h2hPanel) {
+                h2hClose.addEventListener('click', () => {
+                    h2hPanel.classList.add('d-none');
+                });
+            }
+
+            if (pageJumpForm && pageJumpInput) {
+                pageJumpForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const target = parseInt(pageJumpInput.value, 10);
+                    if (Number.isNaN(target)) return;
+                    const clamped = Math.min(Math.max(target, 1), totalPages || 1);
+                    loadGames(clamped);
+                });
+            }
+
+            loadGames(1);
+            populateChoices();
+        });
+    </script>
+    </body>
+</html>

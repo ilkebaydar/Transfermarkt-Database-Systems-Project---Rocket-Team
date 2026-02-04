@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Transfer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
+        
+        .edit-card { 
+            max-width: 800px; 
+            margin: 40px auto; 
+            background: white; 
+            padding: 40px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
+            border-top: 5px solid #198754;
+        }
+        
+        .form-label-sm { font-weight: 700; color: #6c757d; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .profile-img-container {
+            width: 180px;
+            height: 180px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 5px solid #fff;
+            box-shadow: 0 5px 15px rgba(25, 135, 84, 0.2);
+            background-color: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .profile-img { width: 100%; height: 100%; object-fit: cover; }
+        .default-avatar { font-size: 80px; color: #adb5bd; }
+        
+        .player-name-title { font-size: 1.8rem; font-weight: 800; color: #198754; text-align: center; margin-bottom: 30px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="edit-card">
+        
+        <div class="text-center">
+            <div class="profile-img-container">
+                {% if player_image %}
+                    <img src="{{ player_image }}" alt="Player Image" class="profile-img">
+                {% else %}
+                    <i class="fas fa-user default-avatar"></i>
+                {% endif %}
+            </div>
+            
+            <h2 class="player-name-title">{{ transfer.player_name }}</h2>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+            <h5 class="mb-0 fw-bold text-secondary"><i class="fas fa-edit me-2"></i>Edit Transfer Details</h5>
+        </div>
+
+        <form action="{{ url_for('transfers.edit_transfer', transfer_id=transfer.transfer_id) }}" method="POST">
+            
+            <input type="hidden" name="player_id" value="{{ transfer.player_id }}">
+
+            <div class="row g-4">
+                
+                <div class="col-md-12">
+                    <label class="form-label-sm">Player Name</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="fas fa-lock text-success"></i></span>
+                        <input type="text" class="form-control bg-light border-start-0 text-dark fw-bold" 
+                               value="{{ transfer.player_name }}" readonly>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label-sm">From Club</label>
+                    <select name="from_club_id" class="form-select mb-2">
+                        <option value="">-- Select --</option>
+                        {% for c in clubs %}
+                            <option value="{{ c.club_id }}" {% if c.club_id == transfer.from_club_id %}selected{% endif %}>
+                                {{ c.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <input type="text" name="from_club_manual" class="form-control form-control-sm" 
+                           placeholder="Or type manual club name..." value="{{ transfer.from_club_name if not transfer.from_club_id else '' }}">
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label-sm">To Club</label>
+                    <select name="to_club_id" class="form-select mb-2">
+                        <option value="">-- Select --</option>
+                        {% for c in clubs %}
+                            <option value="{{ c.club_id }}" {% if c.club_id == transfer.to_club_id %}selected{% endif %}>
+                                {{ c.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <input type="text" name="to_club_manual" class="form-control form-control-sm" 
+                           placeholder="Or type manual club name..." value="{{ transfer.to_club_name if not transfer.to_club_id else '' }}">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label-sm">Date</label>
+                    <input type="text" name="transfer_date" class="form-control" value="{{ transfer.transfer_date }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm">Season</label>
+                    <input type="text" name="transfer_season" class="form-control" value="{{ transfer.transfer_season }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label-sm text-success">Fee (€)</label>
+                    <input type="number" step="0.01" name="transfer_fee" class="form-control border-success fw-bold text-success" value="{{ transfer.transfer_fee }}" required>
+                </div>
+
+                <div class="col-12 d-flex justify-content-between mt-5 pt-3 border-top">
+                    <a href="{{ url_for('transfers.index') }}" class="btn btn-outline-secondary fw-bold px-4">
+                        <i class="fas fa-arrow-left me-2"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn btn-success px-5 fw-bold shadow-sm">
+                        <i class="fas fa-save me-2"></i>Update Changes
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script id="flash-messages-data" type="application/json">
+    {{ get_flashed_messages(with_categories=true) | tojson | safe }}
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 1. JSON verisini HTML'den çek
+        const flashElement = document.getElementById('flash-messages-data');
+        
+        if (flashElement) {
+            // 2. Veriyi parse et (Python listesini JS arrayine çevirir)
+            const messages = JSON.parse(flashElement.textContent);
+            
+            // 3. Döngüyü SAF JAVASCRIPT ile kur (Jinja loop'u yerine)
+            messages.forEach(function(item) {
+                const category = item[0];
+                const message = item[1];
+                
+                var swalConfig = {
+                    html: message,
+                    confirmButtonColor: '#198754',
+                };
+
+                if (category === 'danger') {
+                    swalConfig.icon = 'error';
+                    swalConfig.title = 'Error!';
+                    swalConfig.showConfirmButton = true;
+                    swalConfig.confirmButtonText = 'OK';
+                } 
+                else if (category === 'success') {
+                    swalConfig.icon = 'success';
+                    swalConfig.title = 'Success!';
+                    swalConfig.showConfirmButton = false;
+                    swalConfig.timer = 2000;
+                    swalConfig.timerProgressBar = true;
+                } 
+                else {
+                    swalConfig.icon = 'info';
+                    swalConfig.title = 'Info';
+                    swalConfig.showConfirmButton = true;
+                }
+                
+                Swal.fire(swalConfig);
+            });
+        }
+    });
+</script>
+
+</body>
+</html>

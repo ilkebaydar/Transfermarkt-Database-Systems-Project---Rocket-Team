@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfer List</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        .content-card { 
+            background: white; 
+            border: 0; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-radius: 12px; 
+            padding: 25px; 
+            margin-bottom: 25px;
+        }
+        
+        .page-header { 
+            border-bottom: 2px solid #198754; 
+            padding-bottom: 15px; 
+            margin-bottom: 25px; 
+            color: #2c3e50; 
+            font-weight: 700; 
+        }
+        
+        .form-label-sm { font-weight: 600; font-size: 0.85rem; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .table {
+            table-layout: fixed;
+            width: 100%;
+        }
+        
+        .table thead th {
+            background-color: #f8f9fa;
+            color: #495057;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #dee2e6;
+            vertical-align: middle;
+        }
+        
+        .table tbody td {
+            font-size: 0.85rem;
+            vertical-align: middle;
+            word-wrap: break-word;
+            padding: 8px 5px;
+        }
+
+        .table-hover tbody tr:hover { 
+            background-color: #f1f8f5; 
+            transition: background-color 0.2s ease-in-out;
+        }
+        
+        .player-name { font-size: 0.95rem; font-weight: bold; }
+        
+        .table-responsive::-webkit-scrollbar { height: 6px; }
+        .table-responsive::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+
+        .ui-autocomplete { z-index: 10000; max-height: 200px; overflow-y: auto; overflow-x: hidden; }
+
+        .pop-real {
+            width: 80px !important;
+            height: 80px !important;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 3px solid #198754;
+            margin-bottom: 5px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .pop-gen {
+            width: 40px !important;
+            height: 40px !important;
+            object-fit: contain;
+            opacity: 0.5;
+            margin-bottom: 5px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .btn-custom-stats {
+            background-color: #000 !important;
+            color: #fff !important;
+            border: 1px solid #000;
+        }
+        .btn-custom-stats:hover {
+            background-color: #6c757d !important; 
+            border-color: #6c757d !important;
+            color: #fff !important;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid px-4 py-4">
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body d-flex flex-wrap align-items-center justify-content-between p-3">
+            
+            <div class="d-flex align-items-center mb-2 mb-md-0">
+                <a href="/" class="btn btn-secondary btn-sm me-3 text-white">
+                    <i class="fas fa-arrow-left"></i> Return to Home
+                </a>
+                <h3 class="mb-0 fw-bold text-dark border-start ps-3">Transfer List</h3>
+            </div>
+
+            <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-end">
+                
+                <form action="{{ url_for('transfers.index') }}" method="GET" class="d-flex" style="max-width: 300px; width: 100%;">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                        <input type="text" name="search" id="player-search" class="form-control border-start-0 ps-0" 
+                               placeholder="Search player..." value="{{ search_query }}" autocomplete="off">
+                        {% if search_query %}
+                            <a href="{{ url_for('transfers.index') }}" class="btn btn-outline-secondary" title="Clear">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        {% else %}
+                            <button type="submit" class="btn btn-outline-secondary">Search</button>
+                        {% endif %}
+                    </div>
+                </form>
+
+                <div class="vr mx-2 text-muted d-none d-md-block"></div>
+
+                <a href="{{ url_for('transfers.transfer_stats') }}" class="btn btn-sm btn-custom-stats" title="View Statistics">
+                    <i class="fas fa-chart-bar me-1"></i> Statistics
+                </a>
+
+                <button class="btn btn-sm btn-success fw-bold text-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseForm" aria-expanded="false">
+                    <i class="fas fa-plus me-1"></i> New Transfer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="collapse mb-4 {{ 'show' if request.args.get('show_add') else '' }}" id="collapseForm">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-file-signature me-2"></i>Add New Transfer</h5>
+            </div>
+            <div class="card-body bg-light p-4">
+                <form action="{{ url_for('transfers.add_transfer') }}" method="POST">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label-sm">Player</label>
+                            <div class="input-group input-group-sm">
+                                <select name="player_id" class="form-select">
+                                    <option value="">-- Select from DB --</option>
+                                    {% for p in players %}
+                                        <option value="{{ p.player_id }}">{{ p.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <input type="text" name="player_manual" class="form-control form-control-sm mt-1" placeholder="Or type name manually...">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label-sm">From Club</label>
+                            <select name="from_club_id" class="form-select form-select-sm mb-1">
+                                <option value="">-- Select from DB --</option>
+                                {% for c in clubs %}
+                                    <option value="{{ c.club_id }}">{{ c.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <input type="text" name="from_club_manual" class="form-control form-select-sm" placeholder="Or type manually...">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label-sm">To Club</label>
+                            <select name="to_club_id" class="form-select form-select-sm mb-1">
+                                <option value="">-- Select from DB --</option>
+                                {% for c in clubs %}
+                                    <option value="{{ c.club_id }}">{{ c.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <input type="text" name="to_club_manual" class="form-control form-select-sm" placeholder="Or type manually...">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label-sm">Date</label>
+                            <input type="text" name="transfer_date" class="form-control form-control-sm" placeholder="YYYY-MM-DD" pattern="\d{4}-\d{2}-\d{2}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-sm">Season</label>
+                            <input type="text" name="transfer_season" class="form-control form-control-sm" placeholder="24/25">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-sm text-success">Fee (€)</label>
+                            <input type="number" step="0.01" name="transfer_fee" class="form-control form-control-sm border-success" placeholder="Required" required>
+                        </div>
+                        <div class="col-12 text-end mt-4">
+                            <button type="submit" class="btn btn-success px-4 fw-bold shadow-sm"><i class="fas fa-save me-2"></i>Save Transfer</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-card">
+        <h4 class="page-header d-flex justify-content-between align-items-center">
+            <span>All Transfers <span class="badge bg-light text-dark border ms-2 fs-6 fw-normal">{{ total_count }} Records</span></span>
+            <small class="text-muted fs-6">Page {{ current_page }} / {{ total_pages }}</small>
+        </h4>
+        
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th style="width: 4%;">#</th>
+                        <th style="width: 18%;">Player</th>
+                        <th style="width: 10%;">Citizenship</th>
+                        <th style="width: 6%;">Born</th>
+                        <th style="width: 10%;">Position</th>
+                        <th style="width: 13%;">From</th>
+                        <th style="width: 13%;">To</th>
+                        <th style="width: 10%;">Date</th>
+                        <th class="text-end" style="width: 10%;">Fee (€)</th>
+                        <th class="text-center" style="width: 8%;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in transfers %}
+                    <tr>
+                        <td class="text-muted small">{{ t.transfer_id }}</td>
+                        
+                        <td>
+                            <div class="text-success player-name" 
+                                 style="cursor: pointer;"
+                                 data-bs-toggle="popover" 
+                                 data-bs-trigger="hover focus" 
+                                 data-bs-placement="top"
+                                 data-bs-html="true"
+                                 title="{{ t.player_name }}"
+                                 data-bs-content="
+                                    <div class='text-center'>
+                                        {% if t.image_url and t.image_url.strip() != '' %}
+                                            <img src='{{ t.image_url }}' class='pop-real'>
+                                        {% else %}
+                                            <img src='https://cdn-icons-png.flaticon.com/512/1077/1077114.png' class='pop-gen'>
+                                        {% endif %}
+                                        <div class='small fw-bold text-dark'>{{ t.position if t.position else 'Player' }}</div>
+                                    </div>
+                                 ">
+                                {{ t.player_name }}
+                            </div>
+                        </td>
+                        
+                        <td><span class="badge bg-light text-dark border text-wrap">{{ t.country_of_citizenship if t.country_of_citizenship else '-' }}</span></td>
+                        <td class="text-muted">{{ t.birth_year if t.birth_year else '-' }}</td>
+                        <td class="small">{{ t.position if t.position else '-' }}</td>
+                        <td class="small">{{ t.from_club_name if t.from_club_name else '-' }}</td>
+                        <td class="small">{{ t.to_club_name if t.to_club_name else '-' }}</td>
+                        <td class="text-muted small">{{ t.transfer_date }}</td>
+                        <td class="text-end fw-bold text-dark small">€{{ "{:,.0f}".format(t.transfer_fee) }}</td>
+                        
+                        <td class="text-center">
+                            <a href="{{ url_for('transfers.edit_transfer', transfer_id=t.transfer_id) }}" 
+                               class="btn btn-link text-primary p-0 me-2" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+
+                            <form action="{{ url_for('transfers.delete_transfer', transfer_id=t.transfer_id) }}" 
+                                  method="POST" 
+                                  style="display:inline;"
+                                  class="delete-form">
+                                <button type="button" class="btn btn-link text-danger p-0" title="Delete" onclick="confirmDelete(this)">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="10" class="text-center py-5 text-muted bg-light rounded-3">
+                            <i class="fas fa-search fa-2x mb-3 d-block opacity-25"></i>
+                            No transfers found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <nav aria-label="Page navigation" class="mt-4 pt-3 border-top">
+            <ul class="pagination justify-content-center mb-0">
+                <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                    <a class="page-link border-0 text-success fw-bold" 
+                       href="{{ url_for('transfers.index', page=current_page-1, search=search_query) }}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+
+                {% for p_num in iter_pages %}
+                    {% if p_num %}
+                        {% if p_num == current_page %}
+                            <li class="page-item active">
+                                <span class="page-link bg-success border-success text-white fw-bold">{{ p_num }}</span>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link text-success fw-bold border-0" 
+                                   href="{{ url_for('transfers.index', page=p_num, search=search_query) }}">
+                                   {{ p_num }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link border-0 text-muted">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                <li class="page-item {% if current_page >= total_pages %}disabled{% endif %}">
+                    <a class="page-link border-0 text-success fw-bold" 
+                       href="{{ url_for('transfers.index', page=current_page+1, search=search_query) }}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+    </div>
+
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script id="server-data" type="application/json">
+{
+    "messages": {{ get_flashed_messages(with_categories=true) | tojson | safe }},
+    "autocompleteUrl": {{ url_for('transfers.autocomplete') | tojson | safe }}
+}
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const dataElement = document.getElementById('server-data');
+        let serverData = { messages: [], autocompleteUrl: '' };
+        
+        if (dataElement) {
+            serverData = JSON.parse(dataElement.textContent);
+        }
+
+        if (serverData.messages && serverData.messages.length > 0) {
+            serverData.messages.forEach(function(item) {
+                const category = item[0];
+                const message = item[1];
+                
+                var swalConfig = {
+                    html: message,
+                    confirmButtonColor: '#198754',
+                };
+
+                if (category === 'danger') {
+                    swalConfig.icon = 'error';
+                    swalConfig.title = 'Error!';
+                    swalConfig.showConfirmButton = true;
+                    swalConfig.confirmButtonText = 'OK';
+                } 
+                else if (category === 'success') {
+                    swalConfig.icon = 'success';
+                    swalConfig.title = 'Success!';
+                    swalConfig.showConfirmButton = false;
+                    swalConfig.timer = 2000;
+                    swalConfig.timerProgressBar = true;
+                } 
+                else {
+                    swalConfig.icon = 'info';
+                    swalConfig.title = 'Info';
+                    swalConfig.showConfirmButton = true;
+                }
+                
+                Swal.fire(swalConfig);
+            });
+        }
+
+        if ($("#player-search").length > 0) {
+            $("#player-search").autocomplete({
+                source: serverData.autocompleteUrl,
+                minLength: 2,
+                select: function(event, ui) {
+                    $(this).val(ui.item.value);
+                    $(this).closest("form").submit();
+                }
+            });
+        }
+    });
+
+    $(document).ready(function() {
+        var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+        var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+            return new bootstrap.Popover(popoverTriggerEl)
+        });
+    });
+
+    function confirmDelete(btn) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $(btn).closest('form').submit();
+            }
+        });
+    }
+</script>
+
+</body>
+</html>

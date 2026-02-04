@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Club Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .content-card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 25px;
+            margin-top: 20px;
+        }
+        .nav-home {
+            text-decoration: none;
+            color: #495057;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.3s;
+        }
+        .nav-home:hover {
+            color: #0d6efd;
+        }
+        thead th {
+            background-color: #212529 !important;
+            color: white !important;
+        }
+        .search-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .form-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+        .form-control-sm, .form-select-sm {
+            font-size: 0.875rem;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .stats-card h5 {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        .stats-card h2 {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 0;
+        }
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+        .sortable:hover {
+            background-color: #343a40 !important;
+        }
+        .sortable i {
+            margin-left: 5px;
+            opacity: 0.5;
+        }
+        #loadingSpinner {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        .club-name-hover {
+            cursor: pointer;
+            position: relative;
+            transition: color 0.2s;
+        }
+        .club-name-hover:hover {
+            color: #0d6efd !important;
+            text-decoration: underline !important;
+        }
+        .pop-real {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .pop-gen {
+            width: 80px;
+            height: 80px;
+            opacity: 0.5;
+        }
+        .popover {
+            max-width: 250px;
+        }
+        .popover-body {
+            text-align: center;
+            padding: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container py-4">
+        <div class="mb-3">
+            <a href="/" class="nav-home">
+                <i class="fas fa-arrow-left"></i> Return to Home
+            </a>
+        </div>
+        <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="fas fa-shield-alt"></i> Club Management Panel</h2>
+        <button class="btn btn-success" onclick="openModal('add')">
+            <i class="fas fa-plus"></i> Add New Club
+        </button>
+    </div>
+
+    <!-- Summary Statistics -->
+    <div class="row mb-4" id="statsCards">
+        <div class="col-md-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <h5><i class="fas fa-shield-alt"></i> Total Clubs</h5>
+                <h2 id="totalClubs">0</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <h5><i class="fas fa-users"></i> Total Squad Size</h5>
+                <h2 id="totalSquad">0</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <h5><i class="fas fa-birthday-cake"></i> Avg. Squad Age</h5>
+                <h2 id="avgAge">0</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <h5><i class="fas fa-chair"></i> Total Capacity</h5>
+                <h2 id="totalCapacity">0</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="search-container">
+        <div class="row align-items-center mb-3">
+            <div class="col-md-6">
+                <label for="searchInput" class="form-label mb-2">
+                    <i class="fas fa-search"></i> Search Clubs
+                </label>
+                <input type="text" id="searchInput" class="form-control" placeholder="Search by name, code, stadium, competition, country..." oninput="filterClubs()">
+            </div>
+            <div class="col-md-6 mt-3 mt-md-0">
+                <label class="form-label mb-2">Results: <span id="resultCount" class="badge bg-primary">0</span></label>
+                <button class="btn btn-sm btn-outline-secondary ms-2" onclick="clearFilters()">
+                    <i class="fas fa-times"></i> Clear Filters
+                </button>
+            </div>
+        </div>
+        
+        <!-- Advanced Filters -->
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label for="filterCompetition" class="form-label">
+                    <i class="fas fa-trophy"></i> Competition
+                </label>
+                <select id="filterCompetition" class="form-select form-select-sm" onchange="filterClubs()">
+                    <option value="">All Competitions</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="filterSquadMin" class="form-label">
+                    <i class="fas fa-users"></i> Squad Size (Min)
+                </label>
+                <input type="number" id="filterSquadMin" class="form-control form-control-sm" placeholder="Min" min="0" onchange="filterClubs()">
+            </div>
+            <div class="col-md-3">
+                <label for="filterAgeMin" class="form-label">
+                    <i class="fas fa-birthday-cake"></i> Avg. Age (Min)
+                </label>
+                <input type="number" id="filterAgeMin" class="form-control form-control-sm" placeholder="Min" min="0" step="0.1" onchange="filterClubs()">
+            </div>
+            <div class="col-md-3">
+                <label for="filterSeatsMin" class="form-label">
+                    <i class="fas fa-chair"></i> Stadium Capacity (Min)
+                </label>
+                <input type="number" id="filterSeatsMin" class="form-control form-control-sm" placeholder="Min" min="0" onchange="filterClubs()">
+            </div>
+        </div>
+        <div class="row g-3 mt-1">
+            <div class="col-md-3">
+                <!-- Empty column for alignment -->
+            </div>
+            <div class="col-md-3">
+                <label for="filterSquadMax" class="form-label">Squad Size (Max)</label>
+                <input type="number" id="filterSquadMax" class="form-control form-control-sm" placeholder="Max" min="0" onchange="filterClubs()">
+            </div>
+            <div class="col-md-3">
+                <label for="filterAgeMax" class="form-label">Avg. Age (Max)</label>
+                <input type="number" id="filterAgeMax" class="form-control form-control-sm" placeholder="Max" min="0" step="0.1" onchange="filterClubs()">
+            </div>
+            <div class="col-md-3">
+                <label for="filterSeatsMax" class="form-label">Stadium Capacity (Max)</label>
+                <input type="number" id="filterSeatsMax" class="form-control form-control-sm" placeholder="Max" min="0" onchange="filterClubs()">
+            </div>
+        </div>
+    </div>
+
+    <div id="loadingSpinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Loading clubs...</p>
+    </div>
+
+    <div class="table-responsive shadow-sm" id="tableContainer">
+        <table class="table table-striped table-hover table-bordered" id="clubsTable">
+            <thead class="table-dark">
+                <tr>
+                    <th class="sortable" onclick="sortTable('club_id')">ID <i class="fas fa-sort"></i></th>
+                    <th class="sortable" onclick="sortTable('club_code')">Code <i class="fas fa-sort"></i></th>
+                    <th class="sortable" onclick="sortTable('name')">Club Name <i class="fas fa-sort"></i></th>
+                    <th class="sortable" onclick="sortTable('competition_id')">Competition ID <i class="fas fa-sort"></i></th>
+                    <th class="sortable" onclick="sortTable('country_name')">Country <i class="fas fa-sort"></i></th>
+                    <th class="sortable" onclick="sortTable('squad_size')">Squad Size <i class="fas fa-sort"></i></th>
+                    <th class="sortable" onclick="sortTable('average_age')">Avg. Age <i class="fas fa-sort"></i></th>
+                    <th class="sortable" onclick="sortTable('stadium_name')">Stadium <i class="fas fa-sort"></i></th>
+                    <th class="sortable" onclick="sortTable('stadium_seats')">Capacity <i class="fas fa-sort"></i></th>
+                    <th>Link</th>
+                    <th class="text-center" style="width: 150px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="clubs-table-body">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="clubModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalTitle">Club Operations</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="clubForm">
+                    <input type="hidden" id="editClubId"> 
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Club ID</label>
+                            <input type="number" id="clubIdInput" class="form-control" placeholder="e.g., 141" required>
+                            <small class="text-muted" id="idHelpText">Enter a unique ID.</small>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Club Name</label>
+                            <input type="text" id="nameInput" class="form-control" placeholder="e.g., Galatasaray" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Competition</label>
+                            <select id="competitionInput" class="form-select">
+                                <option value="">-- Select Competition (Optional) --</option>
+                            </select>
+                            <small class="text-muted">Choose the competition this club participates in</small>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Club Code</label>
+                            <input type="text" id="codeInput" class="form-control" placeholder="e.g., galatasaray">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Squad Size</label>
+                            <input type="number" id="squadInput" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Average Age</label>
+                            <input type="number" step="0.1" id="ageInput" class="form-control" placeholder="25.4">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Stadium Name</label>
+                            <input type="text" id="stadiumInput" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Capacity</label>
+                            <input type="number" id="seatsInput" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Transfermarkt URL</label>
+                        <input type="url" id="urlInput" class="form-control" placeholder="https://...">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveClub()">Save</button>
+            </div>
+        </div>
+    </div>
+    </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container">
+        <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto" id="toastTitle">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    let currentMode = 'add'; // Track 'add' or 'edit' mode
+    let clubModal; // Variable for modal object
+    let allClubs = []; // Store all clubs for filtering
+    let sortedClubs = []; // Store sorted/filtered clubs
+    let currentSort = { column: null, direction: 'asc' }; // Track sorting state
+    let toastElement; // Toast notification element
+    let competitions = []; // Store competitions for dropdown
+
+    // Show toast notification
+    function showToast(title, message, type = 'success') {
+        const toast = document.getElementById('toast');
+        const toastTitle = document.getElementById('toastTitle');
+        const toastMessage = document.getElementById('toastMessage');
+        
+        toastTitle.textContent = title;
+        toastMessage.textContent = message;
+        
+        // Remove previous type classes
+        toast.className = 'toast';
+        if (type === 'success') {
+            toast.classList.add('text-bg-success');
+        } else if (type === 'error') {
+            toast.classList.add('text-bg-danger');
+        } else {
+            toast.classList.add('text-bg-info');
+        }
+        
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+    }
+
+    // Update statistics cards
+    function updateStatistics(clubs) {
+        const totalClubs = clubs.length;
+        const totalSquad = clubs.reduce((sum, club) => sum + (club.squad_size || 0), 0);
+        const avgAge = clubs.length > 0 
+            ? (clubs.reduce((sum, club) => sum + (parseFloat(club.average_age) || 0), 0) / clubs.filter(c => c.average_age).length).toFixed(1)
+            : 0;
+        const totalCapacity = clubs.reduce((sum, club) => sum + (club.stadium_seats || 0), 0);
+        
+        document.getElementById('totalClubs').textContent = totalClubs;
+        document.getElementById('totalSquad').textContent = totalSquad.toLocaleString();
+        document.getElementById('avgAge').textContent = avgAge || '-';
+        document.getElementById('totalCapacity').textContent = totalCapacity.toLocaleString();
+    }
+
+    // Sort table
+    function sortTable(column) {
+        // Toggle sort direction if clicking the same column
+        if (currentSort.column === column) {
+            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSort.column = column;
+            currentSort.direction = 'asc';
+        }
+        
+        // Update sort icons
+        document.querySelectorAll('.sortable i').forEach(icon => {
+            icon.className = 'fas fa-sort';
+        });
+        // Find the clicked header by finding th with onclick containing this column
+        const headers = document.querySelectorAll('.sortable');
+        headers.forEach(header => {
+            if (header.getAttribute('onclick').includes(column)) {
+                const icon = header.querySelector('i');
+                icon.className = currentSort.direction === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
+            }
+        });
+        
+        // Sort the filtered clubs
+        sortedClubs.sort((a, b) => {
+            let aVal = a[column];
+            let bVal = b[column];
+            
+            // Handle null/undefined values
+            if (aVal == null) aVal = '';
+            if (bVal == null) bVal = '';
+            
+            // Convert to numbers if possible
+            const aNum = parseFloat(aVal);
+            const bNum = parseFloat(bVal);
+            
+            if (!isNaN(aNum) && !isNaN(bNum)) {
+                return currentSort.direction === 'asc' ? aNum - bNum : bNum - aNum;
+            }
+            
+            // String comparison
+            const aStr = String(aVal).toLowerCase();
+            const bStr = String(bVal).toLowerCase();
+            
+            if (currentSort.direction === 'asc') {
+                return aStr.localeCompare(bStr);
+            } else {
+                return bStr.localeCompare(aStr);
+            }
+        });
+        
+        displayClubs(sortedClubs);
+    }
+
+    // Load competitions for dropdown
+    function loadCompetitions() {
+        fetch('/api/competitions')
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error('Error loading competitions:', data.error);
+                    return;
+                }
+                competitions = data;
+                populateCompetitionDropdown();
+            })
+            .catch(error => {
+                console.error('Error fetching competitions:', error);
+            });
+    }
+
+    // Populate competition dropdown
+    function populateCompetitionDropdown() {
+        const select = document.getElementById('competitionInput');
+        if (!select) return; // Safety check
+        
+        select.innerHTML = '<option value="">-- Select Competition --</option>';
+        
+        competitions.forEach(comp => {
+            const option = document.createElement('option');
+            option.value = comp.competition_id;
+            // Display format: "Competition Name (Country)" or just "Competition Name"
+            const displayText = comp.country_name 
+                ? `${comp.competition_name || comp.competition_id} (${comp.country_name})`
+                : (comp.competition_name || comp.competition_id);
+            option.textContent = displayText;
+            select.appendChild(option);
+        });
+        
+        // Also populate the filter competition dropdown
+        populateFilterCompetitionDropdown();
+    }
+
+    // Populate filter competition dropdown
+    function populateFilterCompetitionDropdown() {
+        const select = document.getElementById('filterCompetition');
+        if (!select) return; // Safety check
+        
+        select.innerHTML = '<option value="">All Competitions</option>';
+        
+        competitions.forEach(comp => {
+            const option = document.createElement('option');
+            option.value = comp.competition_id;
+            // Display format: "Competition Name (Country)" or just "Competition Name"
+            const displayText = comp.country_name 
+                ? `${comp.competition_name || comp.competition_id} (${comp.country_name})`
+                : (comp.competition_name || comp.competition_id);
+            option.textContent = displayText;
+            select.appendChild(option);
+        });
+    }
+
+    // Clear all filters
+    function clearFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('filterCompetition').value = '';
+        document.getElementById('filterSquadMin').value = '';
+        document.getElementById('filterSquadMax').value = '';
+        document.getElementById('filterAgeMin').value = '';
+        document.getElementById('filterAgeMax').value = '';
+        document.getElementById('filterSeatsMin').value = '';
+        document.getElementById('filterSeatsMax').value = '';
+        filterClubs();
+    }
+
+    // Initialize Bootstrap popovers
+    function initializePopovers() {
+        // Destroy existing popovers first
+        const existingPopovers = document.querySelectorAll('[data-bs-toggle="popover"]');
+        existingPopovers.forEach(el => {
+            const existingPopover = bootstrap.Popover.getInstance(el);
+            if (existingPopover) {
+                existingPopover.dispose();
+            }
+        });
+        
+        // Initialize new popovers
+        const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+        popoverTriggerList.map(function (popoverTriggerEl) {
+            return new bootstrap.Popover(popoverTriggerEl, {
+                html: true,
+                trigger: 'hover focus'
+            });
+        });
+    }
+
+    // On page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Bootstrap modal
+        clubModal = new bootstrap.Modal(document.getElementById('clubModal'));
+        // Load competitions and clubs
+        loadCompetitions();
+        loadClubs();
+    });
+
+    // 1. READ: Fetch data from API and display in table
+    function loadClubs() {
+        document.getElementById('loadingSpinner').style.display = 'block';
+        document.getElementById('tableContainer').style.display = 'none';
+        
+        fetch('/api/clubs_list')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loadingSpinner').style.display = 'none';
+                document.getElementById('tableContainer').style.display = 'block';
+                
+                if (data.error) {
+                    const tbody = document.getElementById('clubs-table-body');
+                    tbody.innerHTML = `<tr><td colspan="11" class="text-danger text-center">${data.error}</td></tr>`;
+                    showToast('Error', data.error, 'error');
+                    return;
+                }
+
+                // Store all clubs for filtering
+                allClubs = data;
+                // Display clubs (will apply filter if search is active)
+                filterClubs();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('loadingSpinner').style.display = 'none';
+                document.getElementById('tableContainer').style.display = 'block';
+                showToast('Error', 'Failed to load clubs. Please try again.', 'error');
+            });
+    }
+
+    // Filter clubs based on search input and filters
+    function filterClubs() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+        
+        // Get filter values
+        const filterCompetition = document.getElementById('filterCompetition').value;
+        const filterSquadMin = parseFloat(document.getElementById('filterSquadMin').value) || null;
+        const filterSquadMax = parseFloat(document.getElementById('filterSquadMax').value) || null;
+        const filterAgeMin = parseFloat(document.getElementById('filterAgeMin').value) || null;
+        const filterAgeMax = parseFloat(document.getElementById('filterAgeMax').value) || null;
+        const filterSeatsMin = parseFloat(document.getElementById('filterSeatsMin').value) || null;
+        const filterSeatsMax = parseFloat(document.getElementById('filterSeatsMax').value) || null;
+        
+        sortedClubs = allClubs.filter(club => {
+            // Text search filter
+            const name = (club.name || '').toLowerCase();
+            const code = (club.club_code || '').toLowerCase();
+            const stadium = (club.stadium_name || '').toLowerCase();
+            const clubId = String(club.club_id || '').toLowerCase();
+            const competitionId = (club.competition_id || '').toLowerCase();
+            const countryName = (club.country_name || '').toLowerCase();
+            
+            const matchesSearch = !searchTerm || 
+                name.includes(searchTerm) || 
+                code.includes(searchTerm) || 
+                stadium.includes(searchTerm) ||
+                clubId.includes(searchTerm) ||
+                competitionId.includes(searchTerm) ||
+                countryName.includes(searchTerm);
+            
+            if (!matchesSearch) return false;
+            
+            // Competition filter
+            if (filterCompetition && club.competition_id !== filterCompetition) {
+                return false;
+            }
+            
+            // Squad size filter
+            const squadSize = parseFloat(club.squad_size) || 0;
+            if (filterSquadMin !== null && squadSize < filterSquadMin) {
+                return false;
+            }
+            if (filterSquadMax !== null && squadSize > filterSquadMax) {
+                return false;
+            }
+            
+            // Average age filter
+            const avgAge = parseFloat(club.average_age);
+            if (!isNaN(avgAge)) {
+                if (filterAgeMin !== null && avgAge < filterAgeMin) {
+                    return false;
+                }
+                if (filterAgeMax !== null && avgAge > filterAgeMax) {
+                    return false;
+                }
+            } else if (filterAgeMin !== null || filterAgeMax !== null) {
+                // If age is null/undefined and we have age filters, exclude it
+                return false;
+            }
+            
+            // Stadium seats filter
+            const seats = parseFloat(club.stadium_seats) || 0;
+            if (filterSeatsMin !== null && seats < filterSeatsMin) {
+                return false;
+            }
+            if (filterSeatsMax !== null && seats > filterSeatsMax) {
+                return false;
+            }
+            
+            return true;
+        });
+
+        // Sort search results: items starting with search term first, then containing
+        if (searchTerm) {
+            sortedClubs.sort((a, b) => {
+                const aName = (a.name || '').toLowerCase();
+                const bName = (b.name || '').toLowerCase();
+                const aCode = (a.club_code || '').toLowerCase();
+                const bCode = (b.club_code || '').toLowerCase();
+                
+                // Check if name starts with search term
+                const aStartsWith = aName.startsWith(searchTerm) || aCode.startsWith(searchTerm);
+                const bStartsWith = bName.startsWith(searchTerm) || bCode.startsWith(searchTerm);
+                
+                // Prioritize: starts with > contains
+                if (aStartsWith && !bStartsWith) return -1;
+                if (!aStartsWith && bStartsWith) return 1;
+                
+                // If both start with or both contain, sort alphabetically
+                return aName.localeCompare(bName);
+            });
+        }
+
+        // Apply current sort if any (but only if no search term, or user explicitly sorted)
+        if (currentSort.column && !searchTerm) {
+            sortTable(currentSort.column);
+        } else {
+            displayClubs(sortedClubs);
+        }
+    }
+
+    // Display clubs in the table
+    function displayClubs(clubs) {
+        const tbody = document.getElementById('clubs-table-body');
+        tbody.innerHTML = ''; // Clear table
+        
+        // Update result count and statistics
+        document.getElementById('resultCount').textContent = clubs.length;
+        updateStatistics(allClubs); // Update stats with all clubs, not filtered
+
+        if (clubs.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="11" class="text-center text-muted">No clubs found matching your search.</td></tr>`;
+            return;
+        }
+
+        clubs.forEach(club => {
+            // Create URL link
+            let urlLink = club.url ? `<a href="${club.url}" target="_blank"><i class="fas fa-external-link-alt"></i> Visit</a>` : '-';
+            
+            // Construct Transfermarkt logo URL - they use club_id in the pattern
+            const clubLogoUrl = `https://tmssl.akamaized.net/images/wappen/head/${club.club_id}.png`;
+            const clubNameEscaped = (club.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            const clubUrl = club.url || '#';
+            
+            // Create popover content with club logo
+            const popoverContent = `
+                <div class='text-center'>
+                    <img src='${clubLogoUrl}' 
+                         class='pop-real' 
+                         onerror="this.onerror=null; this.src='https://cdn-icons-png.flaticon.com/512/1077/1077114.png'; this.className='pop-gen';">
+                    <div class='small fw-bold text-dark mt-2'>${clubNameEscaped}</div>
+                    ${club.stadium_name ? `<div class='small text-muted mt-1'><i class='fas fa-building'></i> ${club.stadium_name}</div>` : ''}
+                    ${club.url ? `<a href='${clubUrl}' target='_blank' class='small text-primary mt-2 d-block'><i class='fas fa-external-link-alt'></i> View on Transfermarkt</a>` : ''}
+                </div>
+            `;
+            
+            const row = `
+                <tr>
+                    <td>${club.club_id}</td>
+                    <td>${club.club_code || '-'}</td>
+                    <td>
+                        <a href="/clubs/${club.club_id}" class="club-name-hover fw-bold text-decoration-none text-dark" 
+                              data-bs-toggle="popover" 
+                              data-bs-trigger="hover focus" 
+                              data-bs-placement="top"
+                              data-bs-html="true"
+                              title="${clubNameEscaped}"
+                              data-bs-content='${popoverContent.replace(/'/g, "&#39;")}'>
+                            ${club.name}
+                        </a>
+                    </td>
+                    <td>${club.competition_id || '-'}</td>
+                    <td>${club.country_name || '-'}</td>
+                    <td>${club.squad_size}</td>
+                    <td>${club.average_age || '-'}</td>
+                    <td>${club.stadium_name || '-'}</td>
+                    <td>${club.stadium_seats ? club.stadium_seats.toLocaleString() : '-'}</td>
+                    <td>${urlLink}</td>
+                    <td class="text-center">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-warning" onclick='openModal("edit", ${JSON.stringify(club)})'>
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteClub(${club.club_id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+        
+        // Initialize Bootstrap popovers for all club names
+        initializePopovers();
+    }
+
+    // 2. Open Modal (Add or Edit Settings)
+    function openModal(mode, club = null) {
+        currentMode = mode;
+        const modalTitle = document.getElementById('modalTitle');
+        const header = document.querySelector('.modal-header');
+
+        if (mode === 'add') {
+            // ADD MODE
+            modalTitle.innerText = "Add New Club";
+            header.classList.remove('bg-warning');
+            header.classList.add('bg-primary');
+            
+            document.getElementById('clubForm').reset(); // Clear form
+            document.getElementById('clubIdInput').disabled = false; // Enable ID input
+            document.getElementById('idHelpText').innerText = "Enter a unique ID.";
+            // Reset competition dropdown to default
+            document.getElementById('competitionInput').value = '';
+        
+        } else {
+            // EDIT MODE
+            modalTitle.innerText = "Edit Club: " + club.name;
+            header.classList.remove('bg-primary');
+            header.classList.add('bg-warning');
+
+            // Fill form with current data
+            document.getElementById('editClubId').value = club.club_id; // Hidden input
+            
+            document.getElementById('clubIdInput').value = club.club_id;
+            document.getElementById('clubIdInput').disabled = true; // ID cannot be changed (Primary Key)
+            document.getElementById('idHelpText').innerText = "ID cannot be changed.";
+
+            document.getElementById('nameInput').value = club.name || '';
+            document.getElementById('codeInput').value = club.club_code || '';
+            document.getElementById('competitionInput').value = club.competition_id || '';
+            document.getElementById('squadInput').value = club.squad_size || '';
+            document.getElementById('ageInput').value = club.average_age || '';
+            document.getElementById('stadiumInput').value = club.stadium_name || '';
+            document.getElementById('seatsInput').value = club.stadium_seats || '';
+            document.getElementById('urlInput').value = club.url || '';
+        }
+        
+        clubModal.show();
+    }
+
+    // 3. CREATE & UPDATE: Save Operation
+    function saveClub() {
+        // Collect form data
+        const competitionValue = document.getElementById('competitionInput').value;
+        const formData = {
+            club_id: document.getElementById('clubIdInput').value,
+            name: document.getElementById('nameInput').value,
+            club_code: document.getElementById('codeInput').value,
+            competition_id: competitionValue || null,
+            squad_size: document.getElementById('squadInput').value,
+            average_age: document.getElementById('ageInput').value,
+            stadium_name: document.getElementById('stadiumInput').value,
+            stadium_seats: document.getElementById('seatsInput').value,
+            url: document.getElementById('urlInput').value
+        };
+
+        let url, method;
+
+        if (currentMode === 'add') {
+            url = '/api/clubs/add';
+            method = 'POST';
+        } else {
+            // In edit mode, send ID in URL
+            const id = document.getElementById('editClubId').value;
+            url = `/api/clubs/${id}`;
+            method = 'PUT';
+        }
+
+        fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                clubModal.hide(); // Close modal
+                showToast('Success', data.message || (currentMode === 'add' ? 'Club added successfully!' : 'Club updated successfully!'), 'success');
+                loadClubs(); // Refresh table
+            } else {
+                showToast('Error', data.error || 'Operation failed.', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Save error:', error);
+            showToast('Error', 'Server communication error. Please try again.', 'error');
+        });
+    }
+
+    // 4. DELETE: Delete Operation
+    function deleteClub(id) {
+        if (!confirm('Are you sure you want to delete this club and all related data?')) return;
+
+        fetch(`/api/clubs/${id}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Success', 'Club deleted successfully!', 'success');
+                loadClubs(); // Refresh table
+            } else {
+                showToast('Error', data.error || 'Delete failed.', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Delete error:', error);
+            showToast('Error', 'Server error. Please try again.', 'error');
+        });
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfer Statistics</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            overflow-x: hidden;
+        }
+
+        /* --- Custom Back Button --- */
+        .btn-back-custom {
+            background-color: #212529;
+            color: #fff;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 1px solid transparent;
+        }
+
+        .btn-back-custom:hover {
+            background-color: #343a40;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            color: #fff;
+        }
+
+        /* --- Card Styles --- */
+        .card-spenders {
+            border: none;
+            border-top: 4px solid #198754; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .header-spenders {
+            background: linear-gradient(135deg, #2e7d32, #1b5e20);
+            color: white;
+            padding: 15px;
+        }
+
+        /* NEW: High Rollers Card Style */
+        .card-high-rollers {
+            border: none;
+            border-top: 4px solid #d4af37; /* Gold border */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .header-high-rollers {
+            background: linear-gradient(135deg, #d4af37, #aa8c2c); /* Gold gradient */
+            color: white;
+            padding: 15px;
+        }
+        
+        .rank-circle {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background-color: #e8f5e9;
+            color: #1b5e20;
+            border-radius: 50%;
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+            line-height: 24px;
+            margin-right: 8px;
+        }
+
+        .card-list {
+            border: none;
+            border-top: 4px solid #212529;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .header-list {
+            background: linear-gradient(135deg, #212529, #2c3e50);
+            color: white;
+            padding: 15px;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: #f1f8e9;
+        }
+        .money-text {
+            font-family: 'Consolas', monospace;
+            font-weight: 600;
+        }
+        .text-theme-green {
+            color: #2e7d32;
+        }
+        .text-theme-gold {
+            color: #b8860b;
+        }
+
+        /* --- Erdal Animation Styles --- */
+        #erdalOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 99999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            backdrop-filter: blur(5px);
+        }
+
+        #erdalImage {
+            max-width: 80%;
+            max-height: 60vh;
+            border: 8px solid white;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
+            animation: popIn 0.5s ease-out;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            80% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+
+        /* --- News Widget Styles --- */
+        .news-widget {
+            position: fixed;
+            bottom: 30px;
+            right: -400px; /* Start off-screen */
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 320px;
+            z-index: 1000;
+            overflow: hidden;
+            border-left: 5px solid #dc3545;
+            transition: right 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .news-widget.active {
+            right: 30px; /* Slide in position */
+        }
+
+        .news-header {
+            background-color: #dc3545;
+            color: white;
+            padding: 5px 15px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .news-close-btn {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.7);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0;
+            line-height: 1;
+        }
+        .news-close-btn:hover { color: white; }
+
+        .blinking-dot {
+            width: 8px;
+            height: 8px;
+            background-color: white;
+            border-radius: 50%;
+            display: inline-block;
+            animation: blink 1.5s infinite;
+        }
+
+        .news-body {
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .player-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #dee2e6;
+            overflow: hidden;
+            background-color: #f1f3f5;
+            flex-shrink: 0;
+        }
+
+        .player-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .player-avatar i {
+            font-size: 24px;
+            color: #adb5bd;
+        }
+
+        .news-content h6 {
+            margin: 0;
+            font-weight: 700;
+            color: #212529;
+            line-height: 1.2;
+        }
+        
+        .news-content p {
+            margin: 2px 0 0 0;
+            font-size: 0.85rem;
+            color: #6c757d;
+            line-height: 1.3;
+        }
+
+        .news-fee {
+            font-size: 0.8rem;
+            color: #198754;
+            font-weight: bold;
+            margin-top: 4px;
+            display: block;
+        }
+
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="erdalOverlay">
+        <img src="{{ url_for('static', filename='erdalbaggal.jpg') }}" id="erdalImage" alt="Erdal Bakkal">
+    </div>
+
+    {% if stats and stats|length > 0 %}
+    {% set latest = stats[0] %}
+    <div class="news-widget" id="newsWidget">
+        <div class="news-header">
+            <div class="d-flex align-items-center gap-2">
+                <span class="blinking-dot"></span>
+                <span>Official Deal</span>
+            </div>
+            <button class="news-close-btn" onclick="closeWidget()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="news-body">
+            <div class="player-avatar">
+                {% if latest.image_url %}
+                    <img src="{{ latest.image_url }}" alt="{{ latest.player_name }}" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\'fas fa-user\'></i>'">
+                {% else %}
+                    <i class="fas fa-user"></i>
+                {% endif %}
+            </div>
+            <div class="news-content">
+                <h6>{{ latest.player_name }}</h6>
+                <p>
+                    <span class="text-dark fw-semibold">{{ latest.to_club_name }}</span>
+                    <br>
+                    <small class="text-muted">Signed Recently</small>
+                </p>
+                <span class="news-fee">{{ "{:,.0f}".format(latest.transfer_fee) }} € Fee</span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="container mt-4">
+        
+        <div class="mb-4">
+            <a href="{{ url_for('transfers.index') }}" id="backBtn" class="btn-back-custom">
+                <i class="fas fa-arrow-left"></i> Back to Transfers
+            </a>
+        </div>
+
+        <div class="mb-4">
+            <h2 class="mb-0 fw-bold text-dark">Market Analytics</h2>
+            <p class="text-muted small">Financial breakdown, top spenders, and complex market insights.</p>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-4 mb-4">
+                
+                <div class="card card-spenders h-auto mb-4">
+                    <div class="header-spenders d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-crown me-2"></i>Top 10 Spenders</h5>
+                        <i class="fas fa-coins opacity-50"></i>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-striped mb-0 align-middle">
+                            <thead class="table-light small text-uppercase">
+                                <tr>
+                                    <th class="ps-3">Club</th>
+                                    <th class="text-end pe-3">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for club in top_spenders %}
+                                <tr>
+                                    <td class="ps-3">
+                                        <span class="rank-circle">{{ loop.index }}</span>
+                                        <span class="fw-bold small text-dark">{{ club.to_club_name }}</span>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <span class="money-text text-theme-green">
+                                            {{ "{:,.0f}".format(club.total_spent) }} €
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="2" class="text-center p-3">No data.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {% if high_rollers %}
+                <div class="card card-high-rollers h-auto">
+                    <div class="header-high-rollers d-flex justify-content-between align-items-center">
+                        <div style="line-height:1.2;">
+                            <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>High Rollers</h5>
+                            <small style="font-size:0.75rem; opacity:0.9;">Above Avg Spending</small>
+                        </div>
+                        <i class="fas fa-chart-pie opacity-50"></i>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead class="table-light small text-uppercase">
+                                <tr>
+                                    <th class="ps-3">Club</th>
+                                    <th class="text-end pe-3">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for club in high_rollers %}
+                                <tr>
+                                    <td class="ps-3">
+                                        <span class="fw-bold small text-dark">{{ club.to_club_name }}</span>
+                                        <span class="badge bg-warning text-dark ms-1" style="font-size:9px;">RICH</span>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <span class="money-text text-theme-gold">
+                                            {{ "{:,.0f}".format(club.total_spent) }} €
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+
+            <div class="col-lg-8 mb-4">
+                <div class="card card-list h-100">
+                    <div class="header-list d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0">Recent Market Activity</h5>
+                            <small class="opacity-75" style="font-size: 0.8rem;">Last 50 Transfers • Fee vs Value Analysis</small>
+                        </div>
+                        <i class="fas fa-chart-line opacity-50"></i>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive" style="max-height: 800px; overflow-y: auto;">
+                            <table class="table table-hover mb-0 align-middle small">
+                                <thead class="table-light sticky-top text-uppercase">
+                                    <tr>
+                                        <th class="ps-3">Date</th>
+                                        <th>Player</th>
+                                        <th class="text-end">Fee</th>
+                                        <th class="text-end">Mkt Value</th>
+                                        <th class="text-center pe-3">Verdict</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in stats %}
+                                    <tr>
+                                        <td class="ps-3 text-muted">{{ row.transfer_date }}</td>
+                                        <td>
+                                            <div class="fw-bold text-dark">{{ row.player_name }}</div>
+                                            <div class="text-muted" style="font-size: 11px;">
+                                                <i class="fas fa-arrow-right text-success me-1"></i> {{ row.to_club_name }}
+                                            </div>
+                                        </td>
+                                        <td class="text-end money-text">{{ "{:,.0f}".format(row.transfer_fee) }} €</td>
+                                        <td class="text-end text-muted">{{ "{:,.0f}".format(row.market_value) }} €</td>
+                                        
+                                        <td class="text-center pe-3">
+                                            {% if row.value_diff >= 0 %}
+                                                <span class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success">
+                                                    Value Deal
+                                                </span>
+                                            {% else %}
+                                                <span class="badge rounded-pill bg-danger bg-opacity-10 text-danger border border-danger">
+                                                    Overpaid
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        function closeWidget() {
+            const widget = document.getElementById('newsWidget');
+            if (widget) {
+                widget.classList.remove('active');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. Back Button Animation
+            const backButton = document.getElementById('backBtn');
+            if (backButton) {
+                backButton.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    const targetUrl = this.href;
+                    const overlay = document.getElementById('erdalOverlay');
+                    overlay.style.display = 'flex';
+                    setTimeout(function() {
+                        window.location.href = targetUrl;
+                    }, 2000);
+                });
+            }
+
+            // 2. News Widget Animation
+            const widget = document.getElementById('newsWidget');
+            if (widget) {
+                setTimeout(() => {
+                    widget.classList.add('active');
+                }, 1000); 
+
+                setTimeout(() => {
+                    widget.classList.remove('active');
+                }, 9000); 
+            }
+        });
+    </script>
+</body>
+</html>

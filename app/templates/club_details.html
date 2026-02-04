@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ club.club_name }} - Club Details</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 0;
+            margin-bottom: 30px;
+        }
+        .club-logo {
+            width: 150px;
+            height: 150px;
+            object-fit: contain;
+            border-radius: 10px;
+            background: white;
+            padding: 10px;
+        }
+        .info-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .league-team-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-left: 4px solid #667eea;
+        }
+        .league-team-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .transfer-table {
+            font-size: 0.9rem;
+        }
+        .transfer-in {
+            color: #198754;
+        }
+        .transfer-out {
+            color: #dc3545;
+        }
+        .season-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 0;
+        }
+        .nav-link-back {
+            color: #495057;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.3s;
+        }
+        .nav-link-back:hover {
+            color: #0d6efd;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-3 text-center">
+                    {% if club.club_id %}
+                    <img src="https://tmssl.akamaized.net/images/wappen/head/{{ club.club_id }}.png" 
+                         class="club-logo" 
+                         alt="{{ club.club_name }}"
+                         onerror="this.src='https://cdn-icons-png.flaticon.com/512/1077/1077114.png'; this.style.background='transparent';">
+                    {% endif %}
+                </div>
+                <div class="col-md-9">
+                    <h1 class="display-4 fw-bold mb-2">{{ club.club_name }}</h1>
+                    {% if club.competition_name %}
+                    <p class="lead mb-2">
+                        <i class="fas fa-trophy"></i> <strong>{{ club.competition_name }}</strong>
+                        {% if club.country_name %}
+                        <span class="ms-2">({{ club.country_name }})</span>
+                        {% endif %}
+                    </p>
+                    {% endif %}
+                    {% if club.stadium_name %}
+                    <p class="mb-1">
+                        <i class="fas fa-building"></i> {{ club.stadium_name }}
+                        {% if club.stadium_seats %}
+                        <span class="ms-2">• Capacity: {{ "{:,}".format(club.stadium_seats) }}</span>
+                        {% endif %}
+                    </p>
+                    {% endif %}
+                    {% if club.url %}
+                    <p class="mb-0">
+                        <a href="{{ club.url }}" target="_blank" class="text-white text-decoration-none">
+                            <i class="fas fa-external-link-alt"></i> View on Transfermarkt
+                        </a>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mb-5">
+        <div class="mb-3">
+            <a href="/clubs" class="nav-link-back">
+                <i class="fas fa-arrow-left"></i> Back to Clubs List
+            </a>
+        </div>
+
+        <div class="row">
+            <!-- Left Column: League Information and Other Teams -->
+            <div class="col-md-4">
+                <!-- League Information -->
+                {% if club.competition_name %}
+                <div class="info-card">
+                    <h4 class="mb-3"><i class="fas fa-trophy text-warning"></i> League Information</h4>
+                    <table class="table table-borderless">
+                        <tbody>
+                            <tr>
+                                <td><strong>Competition:</strong></td>
+                                <td>{{ club.competition_name }}</td>
+                            </tr>
+                            {% if club.country_name %}
+                            <tr>
+                                <td><strong>Country:</strong></td>
+                                <td>{{ club.country_name }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if club.competition_type %}
+                            <tr>
+                                <td><strong>Type:</strong></td>
+                                <td>{{ club.competition_type }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if club.competition_id %}
+                            <tr>
+                                <td><strong>Competition ID:</strong></td>
+                                <td>{{ club.competition_id }}</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+
+                <!-- Other Teams in the League -->
+                {% if other_clubs %}
+                <div class="info-card">
+                    <h4 class="mb-3"><i class="fas fa-users"></i> Other Teams in {{ club.competition_id }}</h4>
+                    <div style="max-height: 600px; overflow-y: auto;">
+                        {% for team in other_clubs %}
+                        <div class="league-team-card">
+                            <div>
+                                <strong>{{ team.club_name }}</strong>
+                                {% if team.average_age %}
+                                <br><small class="text-muted">Avg. Age: {{ "%.1f"|format(team.average_age) }}</small>
+                                {% endif %}
+                                {% if team.squad_size %}
+                                <br><small class="text-muted">Squad: {{ team.squad_size }} players</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Right Column: Transfers by Season -->
+            <div class="col-md-8">
+                <div class="info-card">
+                    <h4 class="mb-4"><i class="fas fa-exchange-alt"></i> Transfers by Season</h4>
+                    
+                    {% if transfers_by_season %}
+                        {% for season_data in transfers_by_season %}
+                        <div class="mb-4">
+                            <h5 class="season-header">
+                                Season {{ season_data.season }}
+                                <span class="float-end">
+                                    <small>
+                                        In: {{ season_data.transfers_in_count }} | 
+                                        Out: {{ season_data.transfers_out_count }}
+                                        {% if season_data.total_spent > 0 or season_data.total_earned > 0 %}
+                                        | Spent: €{{ "{:,.0f}".format(season_data.total_spent) }} | 
+                                        Earned: €{{ "{:,.0f}".format(season_data.total_earned) }}
+                                        {% endif %}
+                                    </small>
+                                </span>
+                            </h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover transfer-table mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Player</th>
+                                            <th>From</th>
+                                            <th>To</th>
+                                            <th>Transfer Fee</th>
+                                            <th>Market Value (at transfer)</th>
+                                            <th>Current Market Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for transfer in season_data.transfers %}
+                                        <tr class="{% if transfer.to_club_id == club.club_id %}transfer-in{% elif transfer.from_club_id == club.club_id %}transfer-out{% endif %}">
+                                            <td>
+                                                {% if transfer.transfer_date %}
+                                                {{ transfer.transfer_date.strftime('%Y-%m-%d') }}
+                                                {% else %}
+                                                -
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <strong>{{ transfer.player_name }}</strong>
+                                                {% if transfer.position %}
+                                                <br><small class="text-muted">{{ transfer.position }}</small>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if transfer.from_club_name %}
+                                                {{ transfer.from_club_name }}
+                                                {% elif transfer.from_club_id == club.club_id %}
+                                                <strong>This Club</strong>
+                                                {% else %}
+                                                -
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if transfer.to_club_name %}
+                                                {{ transfer.to_club_name }}
+                                                {% elif transfer.to_club_id == club.club_id %}
+                                                <strong>This Club</strong>
+                                                {% else %}
+                                                -
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if transfer.transfer_fee %}
+                                                €{{ "{:,.0f}".format(transfer.transfer_fee) }}
+                                                {% else %}
+                                                <span class="text-muted">Free</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if transfer.transfer_market_value %}
+                                                €{{ "{:,.0f}".format(transfer.transfer_market_value) }}
+                                                {% else %}
+                                                -
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if transfer.current_market_value %}
+                                                <strong>€{{ "{:,.0f}".format(transfer.current_market_value) }}</strong>
+                                                {% else %}
+                                                -
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-exchange-alt fa-3x mb-3"></i>
+                        <p>No transfer records found for this club.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
