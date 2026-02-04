@@ -44,7 +44,7 @@ The project utilizes an extensive football dataset containing historical records
 ## 📂 Project Structure
 
 The project is organized as follows:
-
+```text
 BLG317E-rocketteam/
 ├── app/                        # Flask application logic
 │   ├── static/                 # Images and assets
@@ -58,7 +58,7 @@ BLG317E-rocketteam/
 ├── run.py                      # Application entry point
 ├── requirements.txt            # Necessary Python libraries
 ├── ProjectReport-RocketTeam.pdf # Detailed technical project report
-
+```
 
 ## 📝 Notes: About Data Insertion
 
