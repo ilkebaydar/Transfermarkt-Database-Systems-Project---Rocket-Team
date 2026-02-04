@@ -13,10 +13,10 @@ This project was developed as the final term project for the **BLG 317E - Databa
 
 The project responsibilities were distributed among team members based on specific database entities:
 
-* **İlke Başak Baydar (150140709)** – Transfers
-* **Onat Barış Ercan (150210075)** – Players
-* **Furkan Kural (150210056)** – Clubs
-* **Mustafa Çağşak (150220060)** – Games
+* **İlke Başak Baydar ** – Transfers
+* **Onat Barış Ercan ** – Players
+* **Furkan Kural ** – Clubs
+* **Mustafa Çağşak ** – Games
 
 ## 🚀 Project Goal
 
